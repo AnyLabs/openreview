@@ -473,7 +473,7 @@
 
 /* ==================== AI 审查结果区域容器 ==================== */
 .file-ai-review-section {
-  margin-top: var(--spacing-md);
+  margin: var(--spacing-md) var(--spacing-md) 0 var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--border-subtle);
 }
