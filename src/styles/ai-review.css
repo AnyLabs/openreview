@@ -1,0 +1,877 @@
+/* ==========================================================================
+   AI 审查面板样式
+   ========================================================================== */
+
+/* ==================== 审查面板容器 ==================== */
+.ai-review-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.ai-review-panel.panel-disabled {
+  opacity: 0.6;
+  border-color: color-mix(in srgb, var(--border-subtle) 80%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 88%, var(--bg-panel));
+}
+
+.ai-review-top-tip {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid color-mix(in srgb, var(--status-info) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--status-info-bg) 75%, transparent);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+
+/* ==================== 面板头部 ==================== */
+.ai-review-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.ai-review-header svg {
+  color: var(--color-accent);
+}
+
+.ai-review-count {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-normal);
+}
+
+/* ==================== 加载状态 ==================== */
+.ai-review-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.ai-review-loading svg {
+  color: var(--color-accent);
+}
+
+/* ==================== 错误状态 ==================== */
+.ai-review-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
+  color: var(--color-error);
+  text-align: center;
+}
+
+/* ==================== 空状态 ==================== */
+.ai-review-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.ai-review-empty p {
+  margin: 0;
+}
+
+/* ==================== 总结区域 ==================== */
+.ai-review-summary {
+  padding: var(--spacing-md);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.ai-review-summary h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.ai-review-summary p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ==================== 评论列表 ==================== */
+.ai-review-comments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.ai-review-comments h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+/* ==================== 评论项 ==================== */
+.review-comment {
+  padding: var(--spacing-md);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  animation: slideInUp 0.3s ease backwards;
+}
+
+.review-comment-error {
+  border-left: 3px solid var(--color-error);
+}
+
+.review-comment-warning {
+  border-left: 3px solid var(--color-warning);
+}
+
+.review-comment-info {
+  border-left: 3px solid var(--color-info);
+}
+
+/* ==================== 评论头部 ==================== */
+.review-comment-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.review-comment-line {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ==================== 评论内容 ==================== */
+.review-comment-content {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ==================== 操作按钮区域 ==================== */
+.ai-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ==================== 动画 ==================== */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ====================  staggered 动画延迟 ==================== */
+.review-comment {
+  --stagger-delay: 40ms;
+  animation-delay: calc((var(--nth-child, 1) - 1) * var(--stagger-delay));
+}
+
+.review-comment:nth-child(1) {
+  --nth-child: 1;
+}
+
+.review-comment:nth-child(2) {
+  --nth-child: 2;
+}
+
+.review-comment:nth-child(3) {
+  --nth-child: 3;
+}
+
+.review-comment:nth-child(4) {
+  --nth-child: 4;
+}
+
+.review-comment:nth-child(5) {
+  --nth-child: 5;
+}
+
+.review-comment:nth-child(6) {
+  --nth-child: 6;
+}
+
+.review-comment:nth-child(7) {
+  --nth-child: 7;
+}
+
+.review-comment:nth-child(8) {
+  --nth-child: 8;
+}
+
+.review-comment:nth-child(9) {
+  --nth-child: 9;
+}
+
+.review-comment:nth-child(10) {
+  --nth-child: 10;
+}
+
+/* ==========================================================================
+   文件级 AI 审查样式
+   ========================================================================== */
+
+/* ==================== 右侧面板文件审查区域（卡片样式） ==================== */
+.file-review-card {
+  margin-bottom: var(--spacing-md);
+}
+
+.file-review-mode-card {
+  margin-bottom: var(--spacing-md);
+}
+
+.file-review-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.merge-action-card {
+  margin-top: var(--spacing-md);
+}
+
+.merge-strategy-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.merge-strategy-radio-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.merge-strategy-radio-item:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.merge-strategy-radio-item:has(input:checked) {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--bg-card));
+  color: var(--text-primary);
+}
+
+.merge-strategy-radio-item input[type="radio"] {
+  accent-color: var(--color-primary);
+}
+
+.merge-strategy-radio-item:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.merge-approve-btn {
+  margin-top: var(--spacing-sm);
+}
+
+.merge-countdown-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--status-success);
+  justify-content: center;
+}
+
+.merge-completion-hint {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--status-success);
+  background: color-mix(in srgb, var(--status-success-bg) 70%, transparent);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+
+.file-review-mode-btn {
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.file-review-mode-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.file-review-mode-btn.active {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--bg-card));
+  color: var(--text-primary);
+}
+
+.file-review-card .ai-review-header {
+  padding-bottom: var(--spacing-sm);
+}
+
+.file-review-card .ai-review-header svg {
+  color: var(--color-accent);
+}
+
+.file-review-card .file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.selected-file-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.selected-file-info svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.selected-file-info .file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.file-review-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+}
+
+.file-review-hint {
+  margin-top: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+
+.file-review-error {
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  text-align: center;
+}
+
+.batch-review-progress {
+  margin-bottom: var(--spacing-sm);
+}
+
+.batch-review-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.batch-review-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.batch-review-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+  transition: width var(--transition-normal);
+}
+
+.batch-review-current-file {
+  margin-top: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   文件级 AI 审查结果样式（在 TogglePanel 内部）
+   ========================================================================== */
+
+/* ==================== AI 审查结果区域容器 ==================== */
+.file-ai-review-section {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ==================== 文件级 AI 审查结果面板 ==================== */
+.file-ai-review-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+/* ==================== 文件级审查头部 ==================== */
+.file-ai-review-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.file-ai-review-header svg {
+  color: var(--color-accent);
+}
+
+/* ==================== 文件级审查加载状态 ==================== */
+.file-ai-review-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.file-ai-review-loading svg {
+  color: var(--color-accent);
+}
+
+/* ==================== 文件级审查错误状态 ==================== */
+.file-ai-review-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  color: var(--color-error);
+  text-align: center;
+}
+
+/* ==================== 文件级审查总结区域 ==================== */
+.file-ai-review-summary {
+  padding: var(--spacing-md);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.file-ai-review-summary h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.file-ai-review-summary p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.gitlab-file-discussions {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.gitlab-file-discussions h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.gitlab-file-discussions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.gitlab-discussion-thread {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+}
+
+.gitlab-discussion-thread-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.gitlab-discussion-resolved {
+  color: var(--status-success);
+  background: var(--status-success-bg);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--spacing-xs);
+  line-height: 1.6;
+}
+
+.gitlab-discussion-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.gitlab-discussion-note {
+  border-left: 2px solid var(--border-medium);
+  padding-left: var(--spacing-sm);
+}
+
+.gitlab-discussion-note-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.gitlab-discussion-note-body {
+  margin-top: 2px;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ==================== 文件级审查评论列表 ==================== */
+.file-ai-review-comments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.file-ai-review-comments h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+/* ==================== 评论提交表单 ==================== */
+.file-ai-review-submit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-sm);
+}
+
+.submit-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.submit-form-header h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.submit-success {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+}
+
+.submit-success svg {
+  color: var(--color-success);
+}
+
+/* ==================== 编辑器标签页 ==================== */
+.editor-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.editor-tab {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.editor-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.editor-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ==================== 编辑器工具栏 ==================== */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toolbar-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-panel);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-subtle);
+  margin: 0 var(--spacing-xs);
+}
+
+/* ==================== 编辑器内容区域 ==================== */
+.editor-content {
+  min-height: 120px;
+}
+
+.editor-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: var(--spacing-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.editor-textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.editor-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ==================== 编辑器预览区域 ==================== */
+.editor-preview {
+  min-height: 120px;
+  padding: var(--spacing-md);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.preview-placeholder {
+  margin: 0;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ==================== Markdown 预览 ==================== */
+.markdown-preview {
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.markdown-preview p {
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.markdown-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview code {
+  padding: 2px 6px;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+.markdown-preview pre {
+  padding: var(--spacing-md);
+  overflow-x: auto;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.markdown-preview pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.markdown-preview blockquote {
+  padding-left: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--border-medium);
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: var(--spacing-lg);
+  margin: var(--spacing-sm) 0;
+}
+
+.markdown-preview li {
+  margin: var(--spacing-xs) 0;
+}
+
+.markdown-preview a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.markdown-preview a:hover {
+  text-decoration: underline;
+}
+
+.markdown-preview strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.markdown-preview em {
+  font-style: italic;
+}
+
+.markdown-preview del {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* ==================== 提交操作区域 ==================== */
+.submit-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--spacing-sm);
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ==================== 文件选中状态 ==================== */
+.file-diff-panel.selected {
+  border-color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.08);
+}

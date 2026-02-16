@@ -1,0 +1,379 @@
+/* ==========================================================================
+   扁平化搜索选择组件 - Flat Design UI v3.0
+   纯色块 + 边框层次 + 简洁交互
+   ========================================================================== */
+
+/* ==================== 组件容器 ==================== */
+.searchable-select {
+  position: relative;
+  width: 100%;
+  font-size: var(--font-size-base);
+}
+
+.searchable-select.is-open {
+  z-index: 60;
+}
+
+/* ==================== 触发按钮 ==================== */
+.searchable-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  text-align: left;
+  gap: var(--spacing-sm);
+  backdrop-filter: var(--glass-blur) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate);
+}
+
+.searchable-select-trigger:hover {
+  border-color: var(--border-medium);
+}
+
+.searchable-select.is-open .searchable-select-trigger {
+  border-color: var(--color-primary);
+}
+
+.searchable-select.is-disabled .searchable-select-trigger {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-hover);
+}
+
+/* 触发按钮内容区 */
+.searchable-select-trigger-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.searchable-select-trigger-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.searchable-select-trigger-label {
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.searchable-select-trigger-label.is-placeholder {
+  color: var(--text-muted);
+}
+
+.searchable-select-trigger-description {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: var(--spacing-sm);
+  border-left: 1px solid var(--border-subtle);
+  margin-left: var(--spacing-xs);
+}
+
+/* 下拉箭头 */
+.searchable-select-trigger-arrow {
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.searchable-select.is-open .searchable-select-trigger-arrow {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+/* ==================== 下拉面板 ==================== */
+.searchable-select-dropdown {
+  background: var(--layer-elevated-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  z-index: 9999;
+  overflow: hidden;
+  animation: dropdown-slide-down 150ms ease;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.searchable-select-dropdown::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, transparent 22%),
+    var(--layer-elevated-bg);
+  z-index: 0;
+}
+
+.searchable-select-dropdown > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 向上展开的面板 */
+.searchable-select-dropdown.is-top {
+  animation: dropdown-slide-up 150ms ease;
+}
+
+@keyframes dropdown-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdown-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== 搜索框 ==================== */
+.searchable-select-search {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--layer-elevated-soft);
+}
+
+.searchable-select-search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.searchable-select-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-xs) 0;
+  min-width: 0;
+  width: 100%;
+  line-height: 1.5;
+}
+
+.searchable-select-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.searchable-select-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+}
+
+.searchable-select-search-clear:hover {
+  background: var(--border-default);
+  color: var(--text-secondary);
+}
+
+/* ==================== 选项列表容器 ==================== */
+.searchable-select-options {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xs) 0;
+  min-height: 0;
+  background: var(--layer-elevated-bg);
+}
+
+/* 滚动条 */
+.searchable-select-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.searchable-select-options::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.searchable-select-options::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+.searchable-select-options::-webkit-scrollbar-thumb:hover {
+  background: var(--border-medium);
+}
+
+/* ==================== 分组标签 ==================== */
+.searchable-select-group-label {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--layer-elevated-soft);
+  margin-top: var(--spacing-xs);
+}
+
+.searchable-select-group:first-child .searchable-select-group-label {
+  margin-top: 0;
+}
+
+/* ==================== 选项项 ==================== */
+.searchable-select-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--layer-elevated-bg);
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.searchable-select-option:hover {
+  color: var(--text-primary);
+  background: var(--layer-elevated-hover);
+}
+
+.searchable-select-option.is-selected {
+  color: var(--text-primary);
+  background: var(--layer-elevated-active);
+}
+
+.searchable-select-option.is-focused {
+  color: var(--text-primary);
+  background: var(--layer-elevated-hover);
+}
+
+.searchable-select-option.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.searchable-select-option.is-disabled:hover {
+  background: transparent;
+}
+
+/* 选中标记 */
+.searchable-select-option-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+/* 选项图标 */
+.searchable-select-option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.searchable-select-option:hover .searchable-select-option-icon {
+  color: var(--text-secondary);
+}
+
+.searchable-select-option.is-selected .searchable-select-option-icon {
+  color: var(--color-primary);
+}
+
+/* 选项内容区 */
+.searchable-select-option-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.searchable-select-option-label {
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.searchable-select-option-description {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.searchable-select-option:hover .searchable-select-option-description {
+  color: var(--text-tertiary);
+}
+
+/* ==================== 空状态 ==================== */
+.searchable-select-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+/* ==================== 尺寸变体 ==================== */
+.searchable-select.is-small .searchable-select-trigger {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+}
+
+.searchable-select.is-large .searchable-select-trigger {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
+}
+
+/* ==================== 全宽样式 ==================== */
+.searchable-select.is-fullwidth {
+  width: 100%;
+}

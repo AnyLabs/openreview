@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1020" />
+      <stop offset="1" stop-color="#1E3A8A" />
+    </linearGradient>
+    <linearGradient id="glass" x1="140" y1="132" x2="372" y2="372" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE" />
+      <stop offset="1" stop-color="#38BDF8" />
+    </linearGradient>
+    <linearGradient id="accent" x1="98" y1="98" x2="414" y2="414" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399" />
+      <stop offset="1" stop-color="#2DD4BF" />
+    </linearGradient>
+  </defs>
+
+  <rect x="40" y="40" width="432" height="432" rx="112" fill="url(#bg)" />
+  <rect x="56" y="56" width="400" height="400" rx="96" stroke="rgba(255,255,255,0.15)" stroke-width="16" />
+
+  <path d="M154 246L112 286L154 326" stroke="url(#accent)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M358 246L400 286L358 326" stroke="url(#accent)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
+
+  <circle cx="244" cy="228" r="82" stroke="url(#glass)" stroke-width="28" />
+  <path d="M300 286L362 348" stroke="url(#glass)" stroke-width="28" stroke-linecap="round" />
+
+  <circle cx="224" cy="206" r="10" fill="#E0F2FE" />
+  <path d="M248 188C263 188 276 197 284 209" stroke="#E0F2FE" stroke-width="12" stroke-linecap="round" />
+</svg>

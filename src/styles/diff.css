@@ -1,0 +1,872 @@
+/* ==========================================================================
+   扁平化Diff视图样式 - Flat Design UI v3.0
+   纯色块 + 边框层次 + 简洁代码高亮
+   ========================================================================== */
+
+/* ==================== TogglePanel 组件样式 ==================== */
+.toggle-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.toggle-panel:hover {
+  border-color: var(--border-medium);
+}
+
+.toggle-panel.expanded {
+  border-color: var(--border-default);
+}
+
+/* TogglePanel 头部 */
+.toggle-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-panel);
+  border: none;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  position: relative;
+  -webkit-app-region: no-drag;
+}
+
+.toggle-panel-header:hover {
+  background: var(--bg-hover);
+}
+
+.toggle-panel.expanded .toggle-panel-header {
+  border-bottom-color: var(--border-subtle);
+}
+
+.toggle-panel-header:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+/* 头部左侧 */
+.toggle-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+/* 展开/收起箭头 */
+.toggle-panel-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toggle-panel.expanded .toggle-panel-chevron {
+  transform: rotate(90deg);
+  color: var(--color-primary);
+}
+
+/* 头部内容区 */
+.toggle-panel-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 头部操作区 */
+.toggle-panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+/* 内容区域 - 优化手风琴动画效果 */
+.toggle-panel-content {
+  transition: height 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease-out;
+  overflow: hidden;
+  background: var(--bg-app);
+  opacity: 0;
+}
+
+.toggle-panel.expanded .toggle-panel-content {
+  opacity: 1;
+}
+
+.toggle-panel-inner {
+  padding: 0;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-8px);
+}
+
+.toggle-panel.expanded .toggle-panel-inner {
+  transform: translateY(0);
+}
+
+/* 尊重用户的减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .toggle-panel-content,
+  .toggle-panel-inner,
+  .toggle-panel-chevron {
+    transition: none !important;
+    transform: none !important;
+  }
+  
+  .toggle-panel-content {
+    opacity: 1;
+  }
+}
+
+/* ==================== Diff查看器容器 ==================== */
+.diff-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ==================== 文件列表头部 ==================== */
+.diff-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.diff-files-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.diff-files-count {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.diff-files-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.diff-action-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.diff-action-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+}
+
+/* ==================== 文件差异列表 ==================== */
+.diff-files-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.diff-file-wrapper {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.diff-file-wrapper:hover {
+  opacity: 0.95;
+}
+
+.diff-file-wrapper.selected .toggle-panel {
+  border-color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* ==================== 文件差异面板 ==================== */
+.file-diff-panel {
+  margin-bottom: var(--spacing-sm);
+}
+
+.file-diff-panel:last-child {
+  margin-bottom: 0;
+}
+
+/* 文件差异头部信息 */
+.file-diff-header-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.file-diff-path {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-diff-authors {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 文件状态图标 */
+.file-status-icon {
+  flex-shrink: 0;
+}
+
+.file-status-icon.added {
+  color: var(--status-success);
+}
+
+.file-status-icon.deleted {
+  color: var(--status-error);
+}
+
+.file-status-icon.renamed {
+  color: var(--status-info);
+}
+
+.file-status-icon.modified {
+  color: var(--status-warning);
+}
+
+/* 文件差异操作区 */
+.file-diff-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.file-diff-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.diff-stat-added {
+  color: var(--status-success);
+}
+
+.diff-stat-deleted {
+  color: var(--status-error);
+}
+
+/* ==================== Diff状态徽章 ==================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+}
+
+.badge-added {
+  color: var(--status-success);
+  background: var(--status-success-bg);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-deleted {
+  color: var(--status-error);
+  background: var(--status-error-bg);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.badge-modified {
+  color: var(--status-warning);
+  background: var(--status-warning-bg);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.badge-renamed {
+  color: var(--status-info);
+  background: var(--status-info-bg);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* ==================== 文件差异内容区域 ==================== */
+.file-diff-content {
+  position: relative;
+  overflow-x: auto;
+  background: var(--bg-app);
+}
+
+.file-diff-content [data-interactive-lines] [data-line] {
+  cursor: pointer;
+}
+
+/* 覆盖第三方diff库的样式 */
+.file-diff-content [data-pierre-diffs] {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono);
+  line-height: 1.6;
+}
+
+.line-committer-hover-card {
+  position: absolute;
+  z-index: 1200;
+  width: min(360px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: min(320px, 40vh);
+  pointer-events: none;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  overflow: auto;
+}
+
+.line-committer-hover-card-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle);
+  transform: rotate(45deg);
+}
+
+.line-committer-hover-card-bottom .line-committer-hover-card-arrow {
+  top: -6px;
+}
+
+.line-committer-hover-card-top .line-committer-hover-card-arrow {
+  bottom: -6px;
+  border-left: none;
+  border-top: none;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.line-committer-hover-card-title {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.line-committer-hover-card-body {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.file-diff-comment-marker-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.file-diff-comment-marker {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 999px;
+  padding: 0;
+  background: light-dark(rgba(15, 23, 42, 0.04), rgba(248, 250, 252, 0.08));
+  color: var(--diffs-fg-number);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.file-diff-comment-marker:hover,
+.file-diff-comment-marker:focus-visible {
+  color: var(--diffs-fg);
+  background: light-dark(rgba(15, 23, 42, 0.1), rgba(248, 250, 252, 0.16));
+}
+
+.file-diff-comment-marker:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--diffs-fg) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.file-diff-comment-marker-badge {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  min-width: 12px;
+  height: 12px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: light-dark(#dc2626, #fb7185);
+  color: light-dark(#ffffff, #1f2937);
+  font-size: 9px;
+  line-height: 12px;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid light-dark(rgba(255, 255, 255, 0.95), rgba(15, 23, 42, 0.85));
+}
+
+.gitlab-inline-thread {
+  margin: var(--spacing-xs) 0;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+}
+
+.gitlab-inline-thread-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.gitlab-inline-thread-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.gitlab-inline-note {
+  border-left: 2px solid var(--border-medium);
+  padding-left: var(--spacing-sm);
+}
+
+.gitlab-inline-note-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.gitlab-inline-note-body {
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.line-committer-hint {
+  padding: var(--spacing-sm) var(--spacing-md) 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ==================== Diff行样式 ==================== */
+.diff-line {
+  display: flex;
+  align-items: stretch;
+  min-height: 28px;
+  transition: background-color var(--transition-fast);
+}
+
+.diff-line:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* Diff行号 */
+.diff-line-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  min-width: 50px;
+  padding: 0 var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-subtle);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Diff行内容 */
+.diff-line-content {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* 添加的行 */
+.diff-line.added {
+  background: var(--diff-add-bg);
+}
+
+.diff-line.added .diff-line-number {
+  color: var(--diff-add-text);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.diff-line.added .diff-line-content {
+  color: var(--diff-add-text);
+}
+
+/* 删除的行 */
+.diff-line.deleted {
+  background: var(--diff-del-bg);
+}
+
+.diff-line.deleted .diff-line-number {
+  color: var(--diff-del-text);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.diff-line.deleted .diff-line-content {
+  color: var(--diff-del-text);
+}
+
+/* 修改的行 */
+.diff-line.modified {
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.diff-line.modified .diff-line-number {
+  color: var(--status-warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* ==================== 空状态 ==================== */
+.diff-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  gap: var(--spacing-md);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.diff-empty-icon {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+}
+
+/* ==================== 加载状态 ==================== */
+.diff-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  gap: var(--spacing-md);
+  color: var(--text-tertiary);
+}
+
+.diff-loading .spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ==================== 旧版样式兼容（保留） ==================== */
+
+/* 文件列表区域 */
+.diff-file-list {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-panel);
+}
+
+.diff-file-list-header {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-tertiary);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diff-file-list-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  max-height: 150px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 文件项 */
+.diff-file-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.diff-file-item:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+}
+
+.diff-file-item.active {
+  background: var(--bg-active);
+  border-color: var(--color-primary);
+  color: var(--text-primary);
+}
+
+.diff-file-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.diff-file-item-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.diff-file-item-name {
+  font-weight: var(--font-weight-medium);
+}
+
+/* 单个文件Diff容器 */
+.diff-file {
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.diff-file-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.diff-file-path {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.diff-file-path-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.diff-file-path-name {
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diff-file-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.diff-file-content {
+  overflow-x: auto;
+  background: var(--bg-app);
+}
+
+/* 统计信息 */
+.diff-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.diff-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.diff-stat-modified {
+  color: var(--status-warning);
+}
+
+/* 代码块样式 */
+.diff-code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+}
+
+/* ==================== 滚动条美化 ==================== */
+.diff-files-list::-webkit-scrollbar,
+.file-diff-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.diff-files-list::-webkit-scrollbar-track,
+.file-diff-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.diff-files-list::-webkit-scrollbar-thumb,
+.file-diff-content::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.diff-files-list::-webkit-scrollbar-thumb:hover,
+.file-diff-content::-webkit-scrollbar-thumb:hover {
+  background: var(--border-medium);
+}
+
+.diff-files-list::-webkit-scrollbar-corner,
+.file-diff-content::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ==================== 动画效果 ==================== */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.diff-file-wrapper {
+  animation: slideInUp 200ms ease backwards;
+}
+
+.diff-file-wrapper:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.diff-file-wrapper:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.diff-file-wrapper:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.diff-file-wrapper:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.diff-file-wrapper:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+.diff-file-wrapper:nth-child(6) {
+  animation-delay: 200ms;
+}
+
+.diff-file-wrapper:nth-child(7) {
+  animation-delay: 240ms;
+}
+
+.diff-file-wrapper:nth-child(8) {
+  animation-delay: 280ms;
+}

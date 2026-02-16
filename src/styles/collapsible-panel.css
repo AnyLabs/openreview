@@ -1,0 +1,365 @@
+/* ==========================================================================
+   扁平化可折叠面板样式 - Flat Design UI v3.0
+   纯色块 + 边框层次 + 简洁动画
+   用于侧边栏群组/项目/MR列表容器
+   ========================================================================== */
+
+/* ==================== 面板容器 ==================== */
+.collapsible-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.collapsible-panel:hover {
+  border-color: var(--border-medium);
+}
+
+.collapsible-panel.expanded {
+  border-color: var(--border-default);
+}
+
+/* ==================== 面板头部 ==================== */
+.collapsible-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-panel);
+  border: none;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  position: relative;
+  -webkit-app-region: no-drag;
+}
+
+.collapsible-panel-header:hover {
+  background: var(--bg-hover);
+}
+
+.collapsible-panel.expanded .collapsible-panel-header {
+  border-bottom-color: var(--border-subtle);
+}
+
+.collapsible-panel-header:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+/* ==================== 头部左侧内容 ==================== */
+.collapsible-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ==================== 展开/折叠箭头图标 ==================== */
+.collapsible-panel-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+  /* 默认向下（垂直方向） */
+  transform: rotate(0deg);
+}
+
+.collapsible-panel.expanded .collapsible-panel-chevron {
+  color: var(--color-primary);
+  /* 展开时向上（旋转 180 度） */
+  transform: rotate(90deg);
+}
+
+/* ==================== 面板图标 ==================== */
+.collapsible-panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.collapsible-panel:hover .collapsible-panel-icon {
+  color: var(--text-secondary);
+}
+
+.collapsible-panel.expanded .collapsible-panel-icon {
+  color: var(--color-primary);
+}
+
+/* ==================== 面板标题 ==================== */
+.collapsible-panel-title {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.collapsible-panel.expanded .collapsible-panel-title {
+  color: var(--text-primary);
+}
+
+/* ==================== 面板徽章 ==================== */
+.collapsible-panel-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  transition: all var(--transition-fast);
+}
+
+.collapsible-panel-badge:empty {
+  display: none;
+}
+
+/* ==================== 内容区域 - 优化手风琴动画效果 ==================== */
+.collapsible-panel-content {
+  transition: height 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease-out;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.collapsible-panel.expanded .collapsible-panel-content {
+  opacity: 1;
+}
+
+/* ==================== 内容内部容器 ==================== */
+.collapsible-panel-inner {
+  padding: var(--spacing-sm);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(-8px);
+}
+
+.collapsible-panel.expanded .collapsible-panel-inner {
+  transform: translateY(0);
+}
+
+/* 尊重用户的减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .collapsible-panel-content,
+  .collapsible-panel-inner,
+  .collapsible-panel-chevron {
+    transition: none !important;
+    transform: none !important;
+  }
+  
+  .collapsible-panel-content {
+    opacity: 1;
+  }
+}
+
+/* ==================== 侧边栏列表样式 ==================== */
+.sidebar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 列表项 */
+.sidebar-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin: 2px 0;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  position: relative;
+}
+
+.sidebar-list-item:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.sidebar-list-item.active {
+  color: var(--text-primary);
+  background: var(--bg-active);
+}
+
+.sidebar-list-item.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+/* 列表项图标 */
+.sidebar-list-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.sidebar-list-item:hover .sidebar-list-item-icon {
+  color: var(--text-primary);
+}
+
+.sidebar-list-item.active .sidebar-list-item-icon {
+  color: var(--color-primary);
+}
+
+/* 列表项文字 */
+.sidebar-list-item-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 列表项徽章 */
+.sidebar-list-item-badge {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-left: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+/* ==================== 空状态 ==================== */
+.sidebar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.sidebar-empty-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--spacing-sm);
+  opacity: 0.5;
+}
+
+/* ==================== 加载状态 ==================== */
+.sidebar-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  gap: var(--spacing-sm);
+}
+
+.sidebar-loading .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ==================== 滚动条美化 ==================== */
+.collapsible-panel-inner::-webkit-scrollbar {
+  width: 4px;
+}
+
+.collapsible-panel-inner::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.collapsible-panel-inner::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+.collapsible-panel-inner::-webkit-scrollbar-thumb:hover {
+  background: var(--border-medium);
+}
+
+/* ==================== 动画效果 ==================== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar-list-item {
+  animation: slideIn 150ms ease backwards;
+}
+
+.sidebar-list-item:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.sidebar-list-item:nth-child(2) {
+  animation-delay: 20ms;
+}
+
+.sidebar-list-item:nth-child(3) {
+  animation-delay: 40ms;
+}
+
+.sidebar-list-item:nth-child(4) {
+  animation-delay: 60ms;
+}
+
+.sidebar-list-item:nth-child(5) {
+  animation-delay: 80ms;
+}
+
+.sidebar-list-item:nth-child(6) {
+  animation-delay: 100ms;
+}
+
+.sidebar-list-item:nth-child(7) {
+  animation-delay: 120ms;
+}
+
+.sidebar-list-item:nth-child(8) {
+  animation-delay: 140ms;
+}

@@ -1,0 +1,154 @@
+/* ==========================================================================
+   选择字段骨架屏样式
+   模拟 Select 控件加载时的占位效果，防止布局坍塌
+   ========================================================================== */
+
+/* ==================== 骨架屏容器 ==================== */
+.select-fields-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 100%;
+  padding: var(--spacing-xs) 0;
+}
+
+/* ==================== 单个字段骨架 ==================== */
+.skeleton-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+}
+
+/* ==================== 标签骨架 ==================== */
+.skeleton-label {
+  width: 80px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  animation: shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg,
+      var(--bg-hover) 25%,
+      var(--bg-card-hover) 50%,
+      var(--bg-hover) 75%);
+  background-size: 200% 100%;
+}
+
+/* ==================== 选择框骨架 ==================== */
+.skeleton-select {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  animation: shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg,
+      var(--bg-input) 25%,
+      var(--bg-hover) 50%,
+      var(--bg-input) 75%);
+  background-size: 200% 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 选择框右侧下拉箭头占位 */
+.skeleton-select::after {
+  content: '';
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-xs);
+  opacity: 0.5;
+}
+
+/* ==================== 闪烁动画 ==================== */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ==================== 脉冲动画变体 ==================== */
+.select-fields-skeleton.pulse .skeleton-label,
+.select-fields-skeleton.pulse .skeleton-select {
+  animation: pulse-skeleton 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-skeleton {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ==================== 淡入动画 ==================== */
+.select-fields-skeleton {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==================== 不同尺寸变体 ==================== */
+
+/* 小尺寸 - 紧凑模式 */
+.select-fields-skeleton.sm {
+  gap: var(--spacing-sm);
+}
+
+.select-fields-skeleton.sm .skeleton-label {
+  width: 60px;
+  height: 10px;
+}
+
+.select-fields-skeleton.sm .skeleton-select {
+  height: 32px !important;
+}
+
+/* 大尺寸 - 弹窗模式 */
+.select-fields-skeleton.lg {
+  gap: var(--spacing-xl);
+}
+
+.select-fields-skeleton.lg .skeleton-label {
+  width: 100px;
+  height: 14px;
+}
+
+.select-fields-skeleton.lg .skeleton-select {
+  height: 48px !important;
+}
+
+/* ==================== 无障碍 - 减少动画 ==================== */
+@media (prefers-reduced-motion: reduce) {
+
+  .skeleton-label,
+  .skeleton-select {
+    animation: none;
+  }
+
+  .select-fields-skeleton.pulse .skeleton-label,
+  .select-fields-skeleton.pulse .skeleton-select {
+    animation: none;
+    opacity: 0.7;
+  }
+}

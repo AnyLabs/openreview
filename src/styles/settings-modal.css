@@ -1,0 +1,770 @@
+/* ==========================================================================
+   设置弹窗样式 - Settings Modal
+   圆角卡片 + 遮罩层 + 动画效果
+   ========================================================================== */
+
+/* ==================== 弹窗遮罩层 ==================== */
+.settings-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(800px 420px at 8% -10%, rgba(99, 102, 241, 0.18), transparent 65%),
+    radial-gradient(680px 420px at 96% 108%, rgba(56, 189, 248, 0.14), transparent 70%),
+    rgba(6, 10, 22, 0.62);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+  animation: modalBackdropFadeIn 200ms ease;
+}
+
+@keyframes modalBackdropFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==================== 弹窗容器 ==================== */
+.settings-modal-container {
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  background:var(--layer-elevated-bg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalContainerSlideIn 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: var(--glass-blur) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate);
+}
+
+@keyframes modalContainerSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ==================== 弹窗头部 ==================== */
+.settings-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-bottom: 1px solid var(--glass-border);
+  background:
+    linear-gradient(180deg, var(--glass-bg-subtle) 0%, rgba(0, 0, 0, 0) 100%),
+    var(--layer-elevated-soft);
+  flex-shrink: 0;
+}
+
+.settings-modal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.settings-modal-title svg {
+  color: var(--color-primary);
+  width: 24px;
+  height: 24px;
+}
+
+.settings-modal-title h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+}
+
+/* 关闭按钮 */
+.settings-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.settings-modal-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-subtle);
+}
+
+.settings-modal-close:active {
+  background: var(--bg-active);
+}
+
+/* ==================== 弹窗内容区域 ==================== */
+.settings-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--spacing-2xl);
+  background: transparent;
+}
+
+/* 确保弹窗内的下拉菜单可以溢出显示 */
+.settings-modal-body .form-field {
+  position: relative;
+}
+
+/* 弹窗内的表单样式调整 */
+.settings-modal-body .settings-form {
+  gap: var(--spacing-2xl);
+}
+
+.settings-modal-body .settings-section {
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  position: relative;
+  z-index: 1;
+}
+
+.settings-modal-body .settings-section-title {
+  font-size: var(--font-size-lg);
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-modal-body .form-field {
+  gap: var(--spacing-sm);
+}
+
+.settings-modal-body .form-field label {
+  font-size: var(--font-size-base);
+}
+
+.settings-modal-body .form-input {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-base);
+}
+
+.settings-modal-body .form-actions {
+  margin-top: var(--spacing-lg);
+  gap: var(--spacing-lg);
+}
+
+.settings-modal-body .btn {
+  padding: var(--spacing-sm) var(--spacing-xl);
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+}
+
+.provider-modal-container {
+  max-width: 1080px;
+}
+
+.provider-modal-header {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.provider-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.provider-modal-active-state {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.12),
+    rgba(139, 92, 246, 0.08)
+  );
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  border-radius: var(--radius-md);
+}
+
+.provider-modal-active-state strong {
+  color: var(--text-primary);
+}
+
+.provider-modal-active-desc {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+
+.provider-tree-editor {
+  width: 100%;
+}
+
+.provider-tree-grid {
+  display: grid;
+  grid-template-columns: 4fr 6fr;
+  gap: var(--spacing-lg);
+  min-height: 500px;
+}
+
+.provider-tree-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, var(--glass-bg-subtle) 0%, var(--glass-bg-soft) 100%);
+  backdrop-filter: var(--glass-blur) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate);
+}
+
+.provider-hierarchy-panel {
+  gap: var(--spacing-sm);
+}
+
+.provider-tree-list-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.provider-tree-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.provider-tree-panel-header h4 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.provider-tree-panel-header span {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.provider-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-right: 2px;
+}
+
+.provider-hierarchy-list {
+  gap: var(--spacing-md);
+}
+
+.provider-tree-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-subtle);
+}
+
+.provider-tree-item {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+}
+
+.provider-hierarchy-provider {
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-subtle);
+}
+
+.provider-tree-item-head {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-sm);
+}
+
+.provider-hierarchy-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-left: var(--spacing-md);
+  padding-left: var(--spacing-md);
+  border-left: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.provider-hierarchy-empty-model {
+  min-height: 36px;
+  font-size: var(--font-size-xs);
+  border: none;
+  background: transparent;
+  justify-content: flex-start;
+  padding: 0 var(--spacing-sm);
+}
+
+.provider-hierarchy-model-item {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+}
+
+.provider-hierarchy-model-main-btn {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.provider-tree-item.is-active {
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.provider-tree-item-main-btn {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.provider-tree-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  padding: 0;
+}
+
+.provider-tree-item-main strong {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-tree-item-main small {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-tree-item-main small::before {
+  content: "|";
+  margin: 0 12px;
+  color: var(--text-muted);
+}
+
+.provider-tree-delete {
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-tree-item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-right: var(--spacing-sm);
+}
+
+.provider-tree-edit {
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-tree-edit:hover {
+  color: var(--color-primary-light);
+}
+
+.provider-tree-delete:hover {
+  color: var(--status-error);
+}
+
+.provider-tree-add-entry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  height: 34px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.provider-tree-add-entry:hover {
+  color: var(--text-primary);
+  border-color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.provider-tree-global-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.provider-editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+  margin-top: var(--spacing-xs);
+  border-top: 1px solid var(--glass-border);
+  padding-top: var(--spacing-md);
+}
+
+.provider-editor-form-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.provider-editor-panel {
+  gap: var(--spacing-lg);
+}
+
+.provider-editor-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-subtle);
+}
+
+.provider-editor-summary strong {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.provider-editor-summary small {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.provider-editor-token-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.provider-editor-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.provider-editor-actions .btn {
+  width: 100%;
+}
+
+.provider-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px var(--spacing-xl);
+  border-top: 1px solid var(--glass-border);
+  background:
+    linear-gradient(0deg, var(--glass-bg-subtle) 0%, rgba(0, 0, 0, 0) 100%),
+    var(--layer-elevated-soft);
+}
+
+.modal-footer-buttons .btn {
+  width: 90px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 var(--spacing-md);
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+}
+
+/* ==================== 弹窗关闭动画 ==================== */
+.settings-modal-backdrop.closing {
+  animation: modalBackdropFadeOut 200ms ease forwards;
+}
+
+.settings-modal-backdrop.closing .settings-modal-container {
+  animation: modalContainerSlideOut 200ms ease forwards;
+}
+
+@keyframes modalBackdropFadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modalContainerSlideOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 840px) {
+  .settings-modal-backdrop {
+    padding: var(--spacing-md);
+    align-items: flex-end;
+  }
+
+  .settings-modal-container {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation: modalContainerSlideUp 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes modalContainerSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .settings-modal-backdrop.closing .settings-modal-container {
+    animation: modalContainerSlideDown 200ms ease forwards;
+  }
+
+  @keyframes modalContainerSlideDown {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+
+  .settings-modal-header {
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .settings-modal-title svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .settings-modal-title h2 {
+    font-size: var(--font-size-base);
+  }
+
+  .settings-modal-close {
+    width: 32px;
+    height: 32px;
+  }
+
+  .settings-modal-close svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .settings-modal-body {
+    padding: var(--spacing-xl);
+  }
+
+  .provider-modal-container {
+    max-height: 95vh;
+  }
+
+  .provider-tree-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .provider-tree-panel {
+    min-height: auto;
+  }
+
+  .provider-editor-token-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .provider-editor-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .provider-tree-global-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .provider-modal-footer {
+    padding: 12px var(--spacing-lg);
+  }
+
+  .modal-footer-buttons .btn {
+    width: 90px;
+    height: 32px;
+    min-height: 32px;
+    font-size: 13px;
+    font-weight: var(--font-weight-normal);
+  }
+}
+
+/* ==================== 侧边栏设置按钮 ==================== */
+.sidebar-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  backdrop-filter: var(--glass-blur) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate);
+}
+
+.sidebar-settings-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.sidebar-settings-btn:active {
+  background: var(--bg-active);
+}
+
+.sidebar-settings-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==================== 滚动条美化 ==================== */
+.settings-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-modal-body::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
+.settings-modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--border-default);
+}
+
+/* ==================== 高对比度模式 ==================== */
+@media (prefers-contrast: high) {
+  .settings-modal-container {
+    border-width: 2px;
+  }
+
+  .settings-modal-close {
+    border-width: 1px;
+  }
+}
+
+/* ==================== 减少动画偏好 ==================== */
+@media (prefers-reduced-motion: reduce) {
+
+  .settings-modal-backdrop,
+  .settings-modal-container {
+    animation: none;
+  }
+
+  .settings-modal-backdrop.closing,
+  .settings-modal-backdrop.closing .settings-modal-container {
+    animation: none;
+    opacity: 0;
+  }
+}

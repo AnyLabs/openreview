@@ -1,0 +1,965 @@
+/* ==========================================================================
+   CodexMonitor 风格表单样式 - Dark Theme v1.0
+   圆角卡片 + 渐变按钮 + 微妙边框
+   ========================================================================== */
+
+/* ==================== 设置表单容器 ==================== */
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+/* ==================== 设置分区 - 卡片样式 ==================== */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--glass-bg-soft);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate);
+}
+
+.settings-section-title {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ==================== 表单字段 ==================== */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-field label {
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.form-error-text {
+  color: var(--status-error);
+}
+
+.required-star {
+  color: var(--status-error);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ==================== 输入框 - CodexMonitor 风格 ==================== */
+.form-input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.form-input:hover {
+  border-color: var(--border-default);
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-input.error {
+  border-color: var(--status-error);
+}
+
+.form-input.success {
+  border-color: var(--status-success);
+}
+
+/* ==================== 带图标的输入框 ==================== */
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .form-input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.input-with-icon .icon-button {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.input-with-icon .icon-button:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* ==================== 多行文本框 ==================== */
+.form-textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all var(--transition-fast);
+  min-height: 80px;
+  resize: vertical;
+  line-height: var(--line-height-relaxed);
+}
+
+.form-textarea:hover {
+  border-color: var(--border-default);
+}
+
+.form-textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.form-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ==================== 复选框 - CodexMonitor 风格 ==================== */
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.form-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.form-checkbox-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.form-checkbox-box svg {
+  width: 12px;
+  height: 12px;
+  color: white;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all var(--transition-fast);
+}
+
+.form-checkbox input[type="checkbox"]:checked + .form-checkbox-box {
+  background: var(--gradient-accent);
+  border-color: transparent;
+}
+
+.form-checkbox input[type="checkbox"]:checked + .form-checkbox-box svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.form-checkbox:hover .form-checkbox-box {
+  border-color: var(--border-medium);
+}
+
+.form-checkbox-label {
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+/* ==================== 开关按钮 - CodexMonitor 风格 ==================== */
+.form-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.form-switch input[type="checkbox"] {
+  display: none;
+}
+
+.form-switch-track {
+  width: 44px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.form-switch-track::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: white;
+  transition: transform var(--transition-fast);
+}
+
+.form-switch input[type="checkbox"]:checked + .form-switch-track {
+  background: var(--gradient-accent);
+  border-color: transparent;
+}
+
+.form-switch input[type="checkbox"]:checked + .form-switch-track::before {
+  transform: translateX(20px);
+}
+
+.form-switch input[type="checkbox"]:disabled + .form-switch-track {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-switch-label {
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+/* ==================== 按钮样式 - CodexMonitor 风格 ==================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+  font-family: inherit;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 主按钮 - 渐变 */
+.btn-primary {
+  color: white;
+  background: var(--gradient-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+  border-color: var(--border-default);
+}
+
+/* 危险按钮 */
+.btn-danger {
+  color: white;
+  background: var(--status-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/* 幽灵按钮 */
+.btn-ghost {
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* 多彩渐变按钮 - 保存配置专用，与主按钮风格一致 */
+.btn-gradient {
+  color: white;
+  background: var(--gradient-accent);
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.btn-gradient::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.4s ease;
+}
+
+.btn-gradient:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-gradient:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.btn-gradient:active:not(:disabled) {
+  transform: none;
+}
+
+/* 按钮点击波纹效果 */
+.btn-gradient::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease, opacity 0.5s ease;
+  opacity: 0;
+}
+
+.btn-gradient.clicked::after {
+  animation: rippleEffect 0.5s ease-out;
+}
+
+/* 保存成功状态 */
+.btn-gradient.success {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  animation: successPulse 0.4s ease;
+}
+
+.btn-gradient.success:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-gradient.success .btn-icon-save {
+  animation: checkBounce 0.4s ease;
+}
+
+/* 保存中状态 */
+.btn-gradient.loading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.btn-gradient.loading .btn-icon-save {
+  animation: spin 1s linear infinite;
+}
+
+/* 动画定义 */
+@keyframes rippleEffect {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.5;
+  }
+  100% {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+  }
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 小按钮 */
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+}
+
+/* 大按钮 */
+.btn-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+}
+
+/* 图标按钮 */
+.btn-icon {
+  padding: var(--spacing-sm);
+  width: 36px;
+  height: 36px;
+}
+
+.btn-icon.btn-sm {
+  width: 28px;
+  height: 28px;
+  padding: var(--spacing-xs);
+}
+
+.btn-icon.btn-lg {
+  width: 44px;
+  height: 44px;
+  padding: var(--spacing-md);
+}
+
+/* ==================== 状态徽章 - CodexMonitor 风格 ==================== */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 4px var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-full);
+  border: 1px solid;
+}
+
+.status-badge.success {
+  color: var(--status-success);
+  background: var(--status-success-bg);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.status-badge.warning {
+  color: var(--status-warning);
+  background: var(--status-warning-bg);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.error {
+  color: var(--status-error);
+  background: var(--status-error-bg);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.status-badge.info {
+  color: var(--status-info);
+  background: var(--status-info-bg);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.status-badge.neutral {
+  color: var(--text-tertiary);
+  background: rgba(100, 116, 139, 0.1);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+/* ==================== 工具提示 ==================== */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast);
+  pointer-events: none;
+  z-index: 100;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* ==================== 表单分组 ==================== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.form-row > * {
+  flex: 1;
+}
+
+.form-row .form-field {
+  flex: 1;
+}
+
+/* ==================== 帮助文本 ==================== */
+.form-help {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* ==================== 错误消息 ==================== */
+.form-error {
+  font-size: var(--font-size-xs);
+  color: var(--status-error);
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.form-error svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.form-success {
+  font-size: var(--font-size-xs);
+  color: var(--status-success);
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  border-radius: var(--radius-md);
+}
+
+/* ==================== 加载指示器 ==================== */
+.form-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  color: var(--text-muted);
+}
+
+.form-loading .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ==================== 加载提示 ==================== */
+.loading-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.loading-hint .spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ==================== 错误提示 ==================== */
+.error-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--status-error);
+  background: var(--status-error-bg);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+}
+
+/* ==================== 信息提示 ==================== */
+.info-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+/* ==================== 分隔线 ==================== */
+.form-divider {
+  height: 1px;
+  margin: var(--spacing-md) 0;
+  background: var(--border-subtle);
+}
+
+/* ==================== 表单操作区 ==================== */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+/* ==================== 动画效果 ==================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-field {
+  animation: slideUp 200ms ease backwards;
+}
+
+.form-field:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.form-field:nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.form-field:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.form-field:nth-child(4) {
+  animation-delay: 90ms;
+}
+
+.form-field:nth-child(5) {
+  animation-delay: 120ms;
+}
+
+.form-field:nth-child(6) {
+  animation-delay: 150ms;
+}
+
+/* ==================== 加载骨架屏 ==================== */
+.loading-container {
+  width: 100%;
+}
+
+.loading-skeleton {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  animation: pulse-skeleton 2s ease-in-out infinite;
+}
+
+@keyframes pulse-skeleton {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.skeleton-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  position: relative;
+}
+
+.skeleton-spinner::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.2;
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+.skeleton-spinner svg {
+  position: relative;
+  z-index: 1;
+  color: var(--color-primary);
+}
+
+.loading-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.skeleton-line {
+  height: 12px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    var(--bg-hover) 25%,
+    var(--bg-card-hover) 50%,
+    var(--bg-hover) 75%
+  );
+  background-size: 200% 100%;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ==================== 增强错误提示 ==================== */
+.error-hint-enhanced {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--status-error);
+  background: var(--status-error-bg);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+  animation: slideIn 0.3s ease;
+}
+
+.error-hint-enhanced .error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  flex-shrink: 0;
+}
+
+.error-hint-enhanced .retry-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ==================== 增强信息提示 ==================== */
+.info-hint-enhanced {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  animation: slideIn 0.3s ease;
+}
+
+.info-hint-enhanced .info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ==================== Providers 容器淡入动画 ==================== */
+.providers-container {
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== 加载旋转动画 ==================== */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==================== 滑入动画 ==================== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

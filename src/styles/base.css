@@ -1,0 +1,397 @@
+/* ==========================================================================
+   CodexMonitor 风格设计系统 - Dark Theme v1.0
+   深蓝渐变背景 + 圆角卡片 + 微妙发光效果
+   ========================================================================== */
+
+:root {
+  /* ==================== 品牌主色调 ==================== */
+  --color-primary: #6366f1;
+  --color-primary-light: #818cf8;
+  --color-primary-dark: #4f46e5;
+  --color-accent: #8b5cf6;
+  --color-accent-light: #a78bfa;
+
+  /* ==================== 功能颜色 ==================== */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* ==================== 深色主题背景系统 ==================== */
+  --bg-app: #0a0b0f;
+  --bg-sidebar: #111218;
+  --bg-panel: #15161d;
+  --bg-card: #1a1b23;
+  --bg-card-hover: #1e1f28;
+  --bg-input: #0f1014;
+  --bg-active: rgba(99, 102, 241, 0.12);
+  --bg-hover: rgba(255, 255, 255, 0.03);
+
+  /* ==================== 渐变背景 ==================== */
+  --gradient-bg: linear-gradient(180deg, #0a0b0f 0%, #0d0e14 100%);
+  --gradient-card: linear-gradient(180deg, #1a1b23 0%, #17181f 100%);
+  --gradient-accent: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+
+  /* ==================== 边框系统 ==================== */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.15);
+  --border-strong: rgba(99, 102, 241, 0.4);
+  --border-focus: rgba(99, 102, 241, 0.6);
+
+  /* ==================== 文字颜色系统 ==================== */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-muted: #64748b;
+  --text-disabled: #475569;
+  --text-accent: #818cf8;
+  --text-link: #60a5fa;
+
+  /* ==================== 状态颜色 ==================== */
+  --status-success: #22c55e;
+  --status-success-bg: rgba(34, 197, 94, 0.12);
+  --status-warning: #f59e0b;
+  --status-warning-bg: rgba(245, 158, 11, 0.12);
+  --status-error: #ef4444;
+  --status-error-bg: rgba(239, 68, 68, 0.12);
+  --status-info: #3b82f6;
+  --status-info-bg: rgba(59, 130, 246, 0.12);
+
+  /* ==================== Diff 专用颜色 ==================== */
+  --diff-add-bg: rgba(34, 197, 94, 0.1);
+  --diff-add-text: #4ade80;
+  --diff-del-bg: rgba(239, 68, 68, 0.1);
+  --diff-del-text: #f87171;
+
+  /* ==================== 字体系统 ==================== */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 14px;
+  --font-size-lg: 17px;
+  --font-size-xl: 19px;
+  --font-size-2xl: 22px;
+  --font-size-3xl: 26px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ==================== 间距系统 ==================== */
+  --spacing-xs: 3px;
+  --spacing-sm: 6px;
+  --spacing-md: 10px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+  --spacing-2xl: 20px;
+  --spacing-3xl: 24px;
+
+  /* ==================== 圆角系统 ==================== */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ==================== 过渡系统 ==================== */
+  --transition-fast: 100ms ease;
+  --transition-normal: 150ms ease;
+  --transition-slow: 200ms ease;
+
+  /* ==================== 玻璃态材质变量 ==================== */
+  --glass-bg-strong: rgba(17, 19, 28, 0.72);
+  --glass-bg-soft: rgba(24, 27, 38, 0.5);
+  --glass-bg-subtle: rgba(16, 18, 27, 0.36);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --glass-shadow: none;
+  --glass-blur: blur(18px);
+  --glass-saturate: saturate(150%);
+  --layer-elevated-bg: rgba(20, 24, 36, 0.96);
+  --layer-elevated-soft: rgba(28, 33, 47, 0.96);
+  --layer-elevated-hover: rgba(148, 163, 184, 0.14);
+  --layer-elevated-active: rgba(99, 102, 241, 0.2);
+}
+
+/* ==================== 浅色主题 ==================== */
+[data-theme="light"] {
+  --bg-app: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-panel: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-input: #ffffff;
+  --bg-active: rgba(99, 102, 241, 0.08);
+  --bg-hover: rgba(0, 0, 0, 0.02);
+
+  --gradient-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  --gradient-card: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.1);
+  --border-medium: rgba(0, 0, 0, 0.15);
+  --border-strong: rgba(99, 102, 241, 0.3);
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --text-disabled: #cbd5e1;
+  --text-accent: #6366f1;
+  --text-link: #3b82f6;
+
+  --glass-bg-strong: rgba(255, 255, 255, 0.76);
+  --glass-bg-soft: rgba(255, 255, 255, 0.58);
+  --glass-bg-subtle: rgba(248, 250, 252, 0.42);
+  --glass-border: rgba(148, 163, 184, 0.28);
+  --glass-highlight: rgba(255, 255, 255, 0.92);
+  --glass-shadow: none;
+  --glass-blur: blur(16px);
+  --glass-saturate: saturate(165%);
+  --layer-elevated-bg: rgba(255, 255, 255, 0.98);
+  --layer-elevated-soft: rgba(248, 250, 252, 0.98);
+  --layer-elevated-hover: rgba(148, 163, 184, 0.18);
+  --layer-elevated-active: rgba(99, 102, 241, 0.14);
+}
+
+/* ==================== 动画关键帧 ==================== */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ==================== 全局重置 ==================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--text-primary);
+  background:
+    radial-gradient(1200px 640px at 10% -10%, rgba(99, 102, 241, 0.18), transparent 62%),
+    radial-gradient(860px 560px at 92% 12%, rgba(56, 189, 248, 0.16), transparent 66%),
+    radial-gradient(980px 700px at 50% 120%, rgba(139, 92, 246, 0.14), transparent 68%),
+    var(--gradient-bg);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 46px 46px;
+  opacity: 0.24;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-surface {
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate);
+}
+
+@supports not ((backdrop-filter: blur(1px))) {
+  .glass-surface {
+    background: var(--bg-card);
+  }
+}
+
+/* ==================== 滚动条样式 ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-medium);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ==================== 选择样式 ==================== */
+::selection {
+  background: var(--bg-active);
+  color: var(--text-primary);
+}
+
+/* ==================== 焦点样式 ==================== */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ==================== 链接样式 ==================== */
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--text-accent);
+}
+
+/* ==================== 按钮基础样式 ==================== */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ==================== 输入框基础样式 ==================== */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ==================== 代码字体 ==================== */
+code,
+pre,
+samp,
+kbd {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+/* ==================== 图片基础样式 ==================== */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ==================== 工具类 ==================== */
+.text-gradient {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

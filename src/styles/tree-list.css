@@ -1,0 +1,196 @@
+/* ==========================================================================
+   树形列表样式 - Tree List Component
+   支持层级展示、展开/折叠、选中状态
+   ========================================================================== */
+
+/* ==================== 树形列表容器 ==================== */
+.tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* ==================== 树节点 ==================== */
+.tree-node {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================== 树节点内容区域 ==================== */
+.tree-node-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+  border: none;
+  position: relative;
+  background: transparent;
+  min-height: 32px;
+}
+
+.tree-node-content:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.tree-node-content.active {
+  color: var(--text-primary);
+  background: var(--bg-active);
+}
+
+/* 选中状态的左侧指示器 */
+.tree-node-content.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--gradient-accent);
+  border-radius: var(--radius-full);
+}
+
+/* ==================== 展开/折叠按钮 ==================== */
+.tree-node-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: default;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.tree-node-toggle.has-children {
+  cursor: pointer;
+}
+
+.tree-node-toggle.has-children:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+.tree-node-toggle.expanded svg {
+  transform: rotate(90deg);
+}
+
+.tree-node-toggle svg {
+  transition: transform var(--transition-fast);
+}
+
+/* ==================== 文件夹图标 ==================== */
+.tree-node-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-primary-light);
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+}
+
+.tree-node-content:hover .tree-node-icon {
+  opacity: 1;
+}
+
+.tree-node-content.active .tree-node-icon {
+  color: var(--color-primary-light);
+  opacity: 1;
+}
+
+/* ==================== 节点文字 ==================== */
+.tree-node-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* ==================== 子节点容器 ==================== */
+.tree-node-children {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 层级连接线 */
+.tree-node-children::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-subtle);
+  opacity: 0.5;
+}
+
+/* ==================== 嵌套层级样式调整 ==================== */
+.tree-node .tree-node .tree-node-content {
+  /* 子节点的背景稍微透明一点 */
+}
+
+.tree-node .tree-node .tree-node-children::before {
+  left: 32px;
+}
+
+.tree-node .tree-node .tree-node .tree-node-children::before {
+  left: 48px;
+}
+
+/* 更深层级 */
+.tree-node .tree-node .tree-node .tree-node .tree-node-children::before {
+  left: 64px;
+}
+
+/* ==================== 搜索高亮 ==================== */
+.tree-list .list-item-hint {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ==================== 动画效果 ==================== */
+.tree-node-children {
+  animation: tree-expand 200ms ease-out;
+}
+
+@keyframes tree-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== 响应式调整 ==================== */
+@media (max-width: 768px) {
+  .tree-node-content {
+    padding: var(--spacing-sm);
+    min-height: 36px;
+  }
+
+  .tree-node-text {
+    font-size: var(--font-size-sm);
+  }
+}
