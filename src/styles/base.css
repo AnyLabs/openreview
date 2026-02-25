@@ -19,6 +19,7 @@
 
   /* ==================== 深色主题背景系统 ==================== */
   --bg-app: #0a0b0f;
+  --native-titlebar-bg: #0d1018;
   --bg-sidebar: #111218;
   --bg-panel: #15161d;
   --bg-card: #1a1b23;
@@ -124,6 +125,7 @@
 /* ==================== 浅色主题 ==================== */
 [data-theme="light"] {
   --bg-app: #f8fafc;
+  --native-titlebar-bg: #edf2f8;
   --bg-sidebar: #ffffff;
   --bg-panel: #f1f5f9;
   --bg-card: #ffffff;

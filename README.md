@@ -62,9 +62,19 @@ npm run tauri:dev
 # macOS
 npm run tauri:build
 
+# macOS（CI/无 Finder 自动化权限环境，推荐用于避免 DMG 打包 -1743 错误）
+npm run tauri:build:dmg:ci
+
 # Windows (使用专用配置)
 npm run tauri:build:win
 ```
+
+如果你在 macOS 打包 DMG 时遇到以下错误：
+
+- `failed to bundle project error running bundle_dmg.sh`
+- `execution error: 未获得授权将Apple事件发送给Finder。 (-1743)`
+
+可优先使用 `npm run tauri:build:dmg:ci`。该命令会跳过 Finder 美化步骤（不影响安装和运行）。
 
 
 ## 文档

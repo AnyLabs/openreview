@@ -1,4 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { setTheme as setAppTheme } from "@tauri-apps/api/app";
+import { isTauri } from "@tauri-apps/api/core";
+import { getCurrentWindow, type Theme } from "@tauri-apps/api/window";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "../services/storage";
 
 type ResolvedTheme = "dark" | "light";
@@ -13,6 +16,30 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 function getSystemTheme(): ResolvedTheme {
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+async function syncNativeTheme(themeMode: ThemePreference): Promise<void> {
+  if (!isTauri()) return;
+  const nativeTheme: Theme | null = themeMode === "system" ? null : themeMode;
+  try {
+    await setAppTheme(nativeTheme);
+  } catch (error) {
+    console.warn("同步原生窗口主题失败:", error);
+  }
+}
+
+async function syncNativeWindowBackground(): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    const styles = getComputedStyle(document.documentElement);
+    const backgroundColor =
+      styles.getPropertyValue("--native-titlebar-bg").trim() ||
+      styles.getPropertyValue("--bg-app").trim();
+    if (!backgroundColor) return;
+    await getCurrentWindow().setBackgroundColor(backgroundColor);
+  } catch (error) {
+    console.warn("同步原生窗口背景色失败:", error);
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -40,17 +67,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const nextTheme = themeMode === "system" ? getSystemTheme() : themeMode;
     setResolvedTheme(nextTheme);
     document.documentElement.setAttribute("data-theme", nextTheme);
+    void syncNativeTheme(themeMode);
     if (isHydrated) {
       void saveThemePreference(themeMode);
     }
   }, [themeMode, isHydrated]);
 
   useEffect(() => {
+    void syncNativeWindowBackground();
+  }, [resolvedTheme]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
     const handleChange = () => {
       if (themeMode === "system") {
-        setResolvedTheme(getSystemTheme());
-        document.documentElement.setAttribute("data-theme", getSystemTheme());
+        const nextTheme = getSystemTheme();
+        setResolvedTheme(nextTheme);
+        document.documentElement.setAttribute("data-theme", nextTheme);
+        void syncNativeTheme(themeMode);
       }
     };
     mediaQuery.addEventListener("change", handleChange);
