@@ -57,7 +57,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
       setIsHydrated(true);
     };
-    void hydrateTheme();
+    hydrateTheme();
     return () => {
       cancelled = true;
     };
@@ -67,14 +67,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const nextTheme = themeMode === "system" ? getSystemTheme() : themeMode;
     setResolvedTheme(nextTheme);
     document.documentElement.setAttribute("data-theme", nextTheme);
-    void syncNativeTheme(themeMode);
+    syncNativeTheme(themeMode);
     if (isHydrated) {
-      void saveThemePreference(themeMode);
+      saveThemePreference(themeMode);
     }
   }, [themeMode, isHydrated]);
 
   useEffect(() => {
-    void syncNativeWindowBackground();
+    syncNativeWindowBackground();
   }, [resolvedTheme]);
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const nextTheme = getSystemTheme();
         setResolvedTheme(nextTheme);
         document.documentElement.setAttribute("data-theme", nextTheme);
-        void syncNativeTheme(themeMode);
+        syncNativeTheme(themeMode);
       }
     };
     mediaQuery.addEventListener("change", handleChange);
