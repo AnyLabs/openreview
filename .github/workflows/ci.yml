@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify Tauri capability permissions
+        run: npm run tauri:permissions:check
+
       - name: Type check
         run: npm run typecheck
 

@@ -76,6 +76,13 @@ npm run tauri:build:win
 
 可优先使用 `npm run tauri:build:dmg:ci`。该命令会跳过 Finder 美化步骤（不影响安装和运行）。
 
+### 开发自检清单（Tauri 权限）
+
+- 新增 `@tauri-apps/api/*` 调用后，先执行 `npm run tauri:permissions:check`
+- 若校验失败，补齐 `src-tauri/capabilities/default.json` 中对应权限
+- 若新增了校验脚本尚未覆盖的 API，需同步更新 `scripts/check-tauri-permissions.mjs` 的映射规则
+- 提交前建议至少执行一次：`npm run tauri:permissions:check && npm run typecheck`
+
 
 ## 文档
 
