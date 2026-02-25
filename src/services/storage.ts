@@ -8,9 +8,11 @@ import { LazyStore } from "@tauri-apps/plugin-store";
 import type {
   AppConfig,
   GitLabConfig,
+  GitHubConfig,
   AIConfig,
   AIProviderList,
 } from "../types/gitlab";
+import type { PlatformType } from "../types/platform";
 import { PRESET_PROVIDERS } from "../constants/preset-providers";
 
 export type ThemePreference = "dark" | "light" | "system";
@@ -19,6 +21,37 @@ interface StoredSecret {
   mode: "plain" | "enc";
   value: string;
   iv?: string;
+}
+
+interface AppConfigStoreV4 {
+  schemaVersion: 4;
+  profile: {
+    activePlatform: PlatformType;
+    gitlabUrl: string;
+    githubUrl: string;
+    providerId?: string;
+    modelId?: string;
+    modeProviders: AIProviderList;
+    language: string;
+    rules: string[];
+    theme?: ThemePreference;
+  };
+  secrets: {
+    providerApiKeys?: Record<string, StoredSecret>;
+    gitlabToken?: StoredSecret;
+    githubToken?: StoredSecret;
+  };
+  sync: {
+    enabled: boolean;
+    deviceId: string;
+    revision: number;
+    lastSyncedAt?: string;
+    dirtyFields: string[];
+  };
+  meta: {
+    createdAt: string;
+    updatedAt: string;
+  };
 }
 
 interface AppConfigStoreV3 {
@@ -77,8 +110,13 @@ let storeInstance: LazyStore | null = null;
 
 /** 默认配置 */
 export const DEFAULT_CONFIG: AppConfig = {
+  activePlatform: "gitlab",
   gitlab: {
     url: "https://gitlab.com",
+    token: "",
+  },
+  github: {
+    url: "https://github.com",
     token: "",
   },
   ai: {
@@ -92,7 +130,9 @@ export const DEFAULT_CONFIG: AppConfig = {
 
 function cloneDefaultConfig(): AppConfig {
   return {
+    activePlatform: DEFAULT_CONFIG.activePlatform,
     gitlab: { ...DEFAULT_CONFIG.gitlab },
+    github: { ...DEFAULT_CONFIG.github },
     ai: { ...DEFAULT_CONFIG.ai, rules: [...DEFAULT_CONFIG.ai.rules] },
   };
 }
@@ -139,7 +179,9 @@ function mergeWithDefault(config?: Partial<AppConfig> | null): AppConfig {
   };
 
   return {
+    activePlatform: config.activePlatform ?? DEFAULT_CONFIG.activePlatform,
     gitlab: { ...DEFAULT_CONFIG.gitlab, ...config.gitlab },
+    github: { ...DEFAULT_CONFIG.github, ...config.github },
     ai: normalizedAI,
   };
 }
@@ -253,7 +295,7 @@ async function decodeSecret(secret?: StoredSecret): Promise<string> {
   }
 }
 
-async function toStoreConfig(config: AppConfig, theme?: ThemePreference): Promise<AppConfigStoreV3> {
+async function toStoreConfig(config: AppConfig, theme?: ThemePreference): Promise<AppConfigStoreV4> {
   const providerApiKeys: Record<string, StoredSecret> = {};
   const modeProviders = config.ai.modeProviders.map((provider) => ({
     ...provider,
@@ -273,9 +315,11 @@ async function toStoreConfig(config: AppConfig, theme?: ThemePreference): Promis
 
   const now = new Date().toISOString();
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     profile: {
+      activePlatform: config.activePlatform,
       gitlabUrl: config.gitlab.url,
+      githubUrl: config.github.url,
       providerId: config.ai.providerId,
       modelId: config.ai.modelId,
       modeProviders,
@@ -286,6 +330,7 @@ async function toStoreConfig(config: AppConfig, theme?: ThemePreference): Promis
     secrets: {
       providerApiKeys,
       gitlabToken: await encodeSecret(config.gitlab.token),
+      githubToken: await encodeSecret(config.github.token),
     },
     sync: {
       enabled: false,
@@ -325,9 +370,55 @@ async function fromStoreV3Config(storeConfig: AppConfigStoreV3): Promise<AppConf
   });
 
   return mergeWithDefault({
+    activePlatform: "gitlab",
     gitlab: {
       url: storeConfig.profile.gitlabUrl,
       token: await decodeSecret(storeConfig.secrets.gitlabToken),
+    },
+    github: { ...DEFAULT_CONFIG.github },
+    ai: {
+      providerId: storeConfig.profile.providerId,
+      modelId: storeConfig.profile.modelId,
+      modeProviders: modeProviders,
+      language: storeConfig.profile.language,
+      rules: storeConfig.profile.rules ?? [],
+    },
+  });
+}
+
+async function fromStoreV4Config(storeConfig: AppConfigStoreV4): Promise<AppConfig> {
+  const providerApiKeyMap: Record<string, string> = {};
+  if (storeConfig.secrets.providerApiKeys) {
+    for (const [providerName, secret] of Object.entries(
+      storeConfig.secrets.providerApiKeys
+    )) {
+      providerApiKeyMap[providerName] = await decodeSecret(secret);
+    }
+  }
+  const modeProviders = (storeConfig.profile.modeProviders ?? []).map((provider) => {
+    const models = (provider.models || []).map((model) => ({
+      ...model,
+      id: model.id || model.name,
+    }));
+
+    return {
+      ...provider,
+      id: provider.id,
+      apiUrl: provider.apiUrl || "",
+      apiKey: providerApiKeyMap[provider.id] || provider.apiKey || "",
+      models,
+    };
+  });
+
+  return mergeWithDefault({
+    activePlatform: storeConfig.profile.activePlatform,
+    gitlab: {
+      url: storeConfig.profile.gitlabUrl,
+      token: await decodeSecret(storeConfig.secrets.gitlabToken),
+    },
+    github: {
+      url: storeConfig.profile.githubUrl || DEFAULT_CONFIG.github.url,
+      token: await decodeSecret(storeConfig.secrets.githubToken),
     },
     ai: {
       providerId: storeConfig.profile.providerId,
@@ -348,6 +439,15 @@ async function loadFromStore(): Promise<{
   if (!raw || typeof raw !== "object") return null;
 
   const schemaVersion = (raw as { schemaVersion?: number }).schemaVersion;
+
+  if (schemaVersion === 4) {
+    const storeConfig = raw as AppConfigStoreV4;
+    const config = await fromStoreV4Config(storeConfig);
+    const theme =
+      normalizeTheme(storeConfig.profile.theme) ??
+      normalizeTheme(await store.get<string>(STORE_THEME_KEY));
+    return { config, theme };
+  }
 
   if (schemaVersion === 3) {
     const storeConfig = raw as AppConfigStoreV3;
@@ -428,6 +528,25 @@ export async function saveGitLabConfig(gitlab: GitLabConfig): Promise<void> {
   await saveConfig(config);
 }
 
+/** 获取 GitHub 配置 */
+export async function getGitHubConfig(): Promise<GitHubConfig> {
+  return (await loadConfig()).github;
+}
+
+/** 保存 GitHub 配置 */
+export async function saveGitHubConfig(github: GitHubConfig): Promise<void> {
+  const config = await loadConfig();
+  config.github = github;
+  await saveConfig(config);
+}
+
+/** 保存活跃平台 */
+export async function saveActivePlatform(platform: PlatformType): Promise<void> {
+  const config = await loadConfig();
+  config.activePlatform = platform;
+  await saveConfig(config);
+}
+
 /** 获取 AI 配置 */
 export async function getAIConfig(): Promise<AIConfig> {
   return (await loadConfig()).ai;
@@ -482,19 +601,35 @@ export async function saveThemePreference(theme: ThemePreference): Promise<void>
   await store.set(STORE_THEME_KEY, theme);
 
   const raw = await store.get<unknown>(STORE_CONFIG_KEY);
-  if (raw && typeof raw === "object" && (raw as { schemaVersion?: number }).schemaVersion === 3) {
-    const oldConfig = raw as AppConfigStoreV3;
-    await store.set(STORE_CONFIG_KEY, {
-      ...oldConfig,
-      profile: {
-        ...oldConfig.profile,
-        theme,
-      },
-      meta: {
-        ...oldConfig.meta,
-        updatedAt: new Date().toISOString(),
-      },
-    });
+  if (raw && typeof raw === "object") {
+    const sv = (raw as { schemaVersion?: number }).schemaVersion;
+    if (sv === 4) {
+      const oldConfig = raw as AppConfigStoreV4;
+      await store.set(STORE_CONFIG_KEY, {
+        ...oldConfig,
+        profile: {
+          ...oldConfig.profile,
+          theme,
+        },
+        meta: {
+          ...oldConfig.meta,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    } else if (sv === 3) {
+      const oldConfig = raw as AppConfigStoreV3;
+      await store.set(STORE_CONFIG_KEY, {
+        ...oldConfig,
+        profile: {
+          ...oldConfig.profile,
+          theme,
+        },
+        meta: {
+          ...oldConfig.meta,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   await store.save();

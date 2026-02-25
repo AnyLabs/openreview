@@ -15,21 +15,21 @@ import type { DiffLineAnnotation } from "@pierre/diffs/react";
 import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { TogglePanel } from "../../../components/ui/TogglePanel";
 import { FileAIReviewResult } from "../../ai/components/FileAIReviewResult";
-import type { GitLabDiff } from "../../../types/gitlab";
+import type { PlatformDiff } from "../../../types/platform";
 import type { AIReviewResult } from "../../../services/ai";
 import type {
-  GitLabCommitAuthorInfo,
-  GitLabFileLineLatestCommitters,
-} from "../../../services/gitlab";
+  CommitAuthorInfo,
+  FileLineCommitters,
+} from "../../../types/platform";
 import type {
-  GitLabDiscussionThreadView,
-  GitLabFileDiscussions,
-} from "../types/gitlabComments";
+  DiscussionThreadView,
+  FileDiscussions,
+} from "../types/reviewComments";
 import { useTheme } from "../../../contexts/ThemeContext";
 
 interface FileDiffProps {
   /** 文件差异数据 */
-  diff: GitLabDiff;
+  diff: PlatformDiff;
   /** 默认是否展开 */
   defaultExpanded?: boolean;
   /** 展开状态变化回调 */
@@ -42,22 +42,22 @@ interface FileDiffProps {
   aiReviewLoading?: boolean;
   /** AI 审查错误 */
   aiReviewError?: string | null;
-  /** 项目 ID */
-  projectId?: number;
-  /** MR IID */
-  mrIid?: number;
+  /** 仓库 ID */
+  repoId?: number;
+  /** Review IID */
+  reviewIid?: number;
   /** 提交评论回调 */
   onSubmitComment?: (content: string) => Promise<void>;
   /** 当前文件对应的提交作者 */
   commitAuthors?: string[];
   /** 当前文件每个变更行对应的最新提交者 */
-  lineLatestCommitters?: GitLabFileLineLatestCommitters;
-  /** 当前文件对应的 GitLab 讨论数据 */
-  gitlabDiscussions?: GitLabFileDiscussions;
+  lineLatestCommitters?: FileLineCommitters;
+  /** 当前文件对应的讨论数据 */
+  discussions?: FileDiscussions;
 }
 
 interface LineAnnotationMeta {
-  thread: GitLabDiscussionThreadView;
+  thread: DiscussionThreadView;
   side: "additions" | "deletions";
   lineNumber: number;
   threadKey: string;
@@ -82,7 +82,7 @@ interface HoveredLineCommitterCard {
   anchorBottom: number;
   side: "additions" | "deletions";
   lineNumber: number;
-  authorInfo: GitLabCommitAuthorInfo;
+  authorInfo: CommitAuthorInfo;
 }
 
 function getLineMarkerKey(side: "additions" | "deletions", lineNumber: number) {
@@ -112,22 +112,22 @@ function areLineMarkersEqual(
 /**
  * 获取文件状态图标
  */
-function getFileStatusIcon(diff: GitLabDiff) {
-  if (diff.new_file)
+function getFileStatusIcon(diff: PlatformDiff) {
+  if (diff.newFile)
     return (
       <FilePlus
         size={14}
         className="file-status-icon added"
       />
     );
-  if (diff.deleted_file)
+  if (diff.deletedFile)
     return (
       <FileMinus
         size={14}
         className="file-status-icon deleted"
       />
     );
-  if (diff.renamed_file)
+  if (diff.renamedFile)
     return (
       <ArrowRightLeft
         size={14}
@@ -145,11 +145,11 @@ function getFileStatusIcon(diff: GitLabDiff) {
 /**
  * 获取文件状态徽章
  */
-function getFileStatusBadge(diff: GitLabDiff) {
-  if (diff.new_file) return <span className="badge badge-added">新增</span>;
-  if (diff.deleted_file)
+function getFileStatusBadge(diff: PlatformDiff) {
+  if (diff.newFile) return <span className="badge badge-added">新增</span>;
+  if (diff.deletedFile)
     return <span className="badge badge-deleted">删除</span>;
-  if (diff.renamed_file)
+  if (diff.renamedFile)
     return <span className="badge badge-renamed">重命名</span>;
   return <span className="badge badge-modified">修改</span>;
 }
@@ -179,14 +179,14 @@ function parseDiffStats(diffContent: string): {
 /**
  * 构建 unified diff patch 格式
  */
-function buildUnifiedPatch(diff: GitLabDiff): string {
-  const oldPath = diff.old_path || "/dev/null";
-  const newPath = diff.new_path || "/dev/null";
+function buildUnifiedPatch(diff: PlatformDiff): string {
+  const oldPath = diff.oldPath || "/dev/null";
+  const newPath = diff.newPath || "/dev/null";
 
-  // GitLab 返回的 diff 已经是 unified diff 格式，添加文件头
+  // diff 内容已经是 unified diff 格式，添加文件头
   const header = `--- a/${oldPath}\n+++ b/${newPath}\n`;
 
-  // 直接使用 GitLab 返回的 diff 内容
+  // 直接使用 diff 内容
   return header + (diff.diff || "");
 }
 
@@ -205,12 +205,12 @@ function FileDiffHeader({
   diff,
   commitAuthors = [],
 }: {
-  diff: GitLabDiff;
+  diff: PlatformDiff;
   commitAuthors?: string[];
 }) {
-  const filePath = diff.renamed_file
-    ? `${diff.old_path} → ${diff.new_path}`
-    : diff.new_path || diff.old_path;
+  const filePath = diff.renamedFile
+    ? `${diff.oldPath} → ${diff.newPath}`
+    : diff.newPath || diff.oldPath;
 
   return (
     <div className="file-diff-header-info">
@@ -236,7 +236,7 @@ function FileDiffHeader({
 /**
  * 文件差异头部操作区（变更统计）
  */
-function FileDiffActions({ diff }: { diff: GitLabDiff }) {
+function FileDiffActions({ diff }: { diff: PlatformDiff }) {
   const stats = parseDiffStats(diff.diff || "");
 
   return (
@@ -267,16 +267,16 @@ export function FileDiff({
   aiReviewResult,
   aiReviewLoading = false,
   aiReviewError = null,
-  projectId,
-  mrIid,
+  repoId,
+  reviewIid,
   onSubmitComment,
   commitAuthors = [],
   lineLatestCommitters,
-  gitlabDiscussions,
+  discussions,
 }: FileDiffProps) {
   const { resolvedTheme } = useTheme();
   const patch = buildUnifiedPatch(diff);
-  const filePath = diff.new_path || diff.old_path || "";
+  const filePath = diff.newPath || diff.oldPath || "";
   const [expandedThreadKeys, setExpandedThreadKeys] = useState<Set<string>>(
     () => new Set()
   );
@@ -296,14 +296,14 @@ export function FileDiff({
   );
 
   const lineAnnotations = useMemo<DiffLineAnnotation<LineAnnotationMeta>[]>(() => {
-    if (!gitlabDiscussions || expandedThreadKeys.size === 0) {
+    if (!discussions || expandedThreadKeys.size === 0) {
       return [];
     }
 
     const annotations: DiffLineAnnotation<LineAnnotationMeta>[] = [];
 
     const appendBySide = (side: "additions" | "deletions") => {
-      const sideMap = gitlabDiscussions.lineThreads[side];
+      const sideMap = discussions.lineThreads[side];
       for (const [lineKey, threads] of Object.entries(sideMap)) {
         const lineNumber = Number.parseInt(lineKey, 10);
         if (!Number.isFinite(lineNumber)) continue;
@@ -330,7 +330,7 @@ export function FileDiff({
     appendBySide("deletions");
 
     return annotations;
-  }, [expandedThreadKeys, gitlabDiscussions]);
+  }, [expandedThreadKeys, discussions]);
 
   const discussionLineNumbers = useMemo(() => {
     const additions = new Set<number>();
@@ -341,7 +341,7 @@ export function FileDiff({
     };
 
     const appendSideLines = (
-      sideMap: Record<number, GitLabDiscussionThreadView[]>,
+      sideMap: Record<number, DiscussionThreadView[]>,
       sideSet: Set<number>,
       sideCountMap: Map<number, number>
     ) => {
@@ -358,12 +358,12 @@ export function FileDiff({
     };
 
     appendSideLines(
-      gitlabDiscussions?.lineThreads.additions || {},
+      discussions?.lineThreads.additions || {},
       additions,
       counts.additions
     );
     appendSideLines(
-      gitlabDiscussions?.lineThreads.deletions || {},
+      discussions?.lineThreads.deletions || {},
       deletions,
       counts.deletions
     );
@@ -373,7 +373,7 @@ export function FileDiff({
       deletions,
       counts,
     };
-  }, [gitlabDiscussions]);
+  }, [discussions]);
 
   const recalculateLineCommentMarkers = useCallback(() => {
     const container = fileDiffContentRef.current;
@@ -580,7 +580,7 @@ export function FileDiff({
       }
 
       const lineThreads =
-        gitlabDiscussions?.lineThreads[params.annotationSide]?.[
+        discussions?.lineThreads[params.annotationSide]?.[
           params.lineNumber
         ] || [];
 
@@ -601,7 +601,7 @@ export function FileDiff({
         return next;
       });
     },
-    [gitlabDiscussions]
+    [discussions]
   );
 
   const handleLineCommentMarkerClick = useCallback((marker: LineCommentMarker) => {
@@ -924,11 +924,11 @@ export function FileDiff({
             result={aiReviewResult ?? null}
             loading={aiReviewLoading}
             error={aiReviewError}
-            projectId={projectId}
-            mrIid={mrIid}
+            repoId={repoId}
+            reviewIid={reviewIid}
             onSubmitComment={onSubmitComment}
-            gitlabFileDiscussions={gitlabDiscussions?.fileThreads || []}
-            gitlabCommentCount={gitlabDiscussions?.totalCount || 0}
+            fileDiscussions={discussions?.fileThreads || []}
+            fileCommentCount={discussions?.totalCount || 0}
             lineLatestCommitters={lineLatestCommitters}
           />
         </div>

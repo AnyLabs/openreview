@@ -1,5 +1,5 @@
 /**
- * 设置表单组件 - GitLab 和 AI 配置
+ * 设置表单组件 - Git 平台和 AI 配置
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -11,9 +11,9 @@ import { Select } from "../../../components/ui/select";
 import { useTheme } from "../../../contexts/ThemeContext";
 import {
   type AIFormValues,
-  type GitLabFormValues,
+  type PlatformFormValues,
   aiFormSchema,
-  gitLabFormSchema,
+  platformFormSchema,
 } from "../schemas/settingsSchemas";
 import {
   Form,
@@ -27,6 +27,8 @@ import {
 import { Input } from "../../../components/ui/input";
 import { Textarea } from "../../../components/ui/textarea";
 import { Button } from "../../../components/ui/button";
+import type { PlatformType } from "../../../types/platform";
+import { PLATFORM_LABELS } from "../../../constants/platform-labels";
 
 interface SettingsFormProps {
   onSubmitSuccess?: () => void;
@@ -43,18 +45,19 @@ function getAIFormDefaults(config: ReturnType<typeof useApp>[0]["config"]): AIFo
 
 export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
   const [state, actions] = useApp();
-  const { config, isConnected, isConnecting, error } = state;
+  const { config, isConnected, isConnecting, error, activePlatform } = state;
   const { themeMode, resolvedTheme, setThemeMode } = useTheme();
 
   const [showToken, setShowToken] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "loading" | "success">("idle");
 
-  const gitLabForm = useForm<GitLabFormValues>({
-    resolver: zodResolver(gitLabFormSchema),
+  const platformForm = useForm<PlatformFormValues>({
+    resolver: zodResolver(platformFormSchema),
     mode: "onBlur",
     defaultValues: {
-      gitlabUrl: config.gitlab.url,
-      gitlabToken: config.gitlab.token,
+      platform: activePlatform,
+      platformUrl: activePlatform === "github" ? config.github.url : config.gitlab.url,
+      platformToken: activePlatform === "github" ? config.github.token : config.gitlab.token,
     },
   });
 
@@ -64,17 +67,30 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
     defaultValues: getAIFormDefaults(config),
   });
 
+  const watchedPlatform = platformForm.watch("platform");
   const openaiProviderId = aiForm.watch("openaiProviderId");
   const openaiModelId = aiForm.watch("openaiModelId");
 
+  // 切换平台时更新表单值
   useEffect(() => {
-    gitLabForm.reset({
-      gitlabUrl: config.gitlab.url,
-      gitlabToken: config.gitlab.token,
-    });
+    const newPlatformUrl = watchedPlatform === "github"
+      ? config.github.url
+      : config.gitlab.url;
+    const newPlatformToken = watchedPlatform === "github"
+      ? config.github.token
+      : config.gitlab.token;
+    platformForm.setValue("platformUrl", newPlatformUrl);
+    platformForm.setValue("platformToken", newPlatformToken);
+  }, [watchedPlatform, config]);
 
+  useEffect(() => {
+    platformForm.reset({
+      platform: activePlatform,
+      platformUrl: activePlatform === "github" ? config.github.url : config.gitlab.url,
+      platformToken: activePlatform === "github" ? config.github.token : config.gitlab.token,
+    });
     aiForm.reset(getAIFormDefaults(config));
-  }, [config, aiForm, gitLabForm]);
+  }, [config, activePlatform, aiForm, platformForm]);
 
   useEffect(() => {
     const providerOptions = config.ai.modeProviders;
@@ -108,6 +124,14 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
       { value: "dark", label: "深色主题", description: "始终使用深色外观" },
       { value: "light", label: "浅色主题", description: "始终使用浅色外观" },
       { value: "system", label: "跟随系统颜色配置", description: "自动跟随系统深浅色" },
+    ],
+    []
+  );
+
+  const platformOptions = useMemo(
+    () => [
+      { value: "gitlab" as const, label: PLATFORM_LABELS.gitlab.name, description: PLATFORM_LABELS.gitlab.review },
+      { value: "github" as const, label: PLATFORM_LABELS.github.name, description: PLATFORM_LABELS.github.review },
     ],
     []
   );
@@ -162,8 +186,13 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
     );
   }, [config.ai]);
 
-  const onGitLabSubmit = gitLabForm.handleSubmit(async (values) => {
-    await actions.updateGitLabConfig(values.gitlabUrl, values.gitlabToken);
+  const onPlatformSubmit = platformForm.handleSubmit(async (values) => {
+    const platform = values.platform as PlatformType;
+    if (platform === "gitlab") {
+      await actions.updateGitLabConfig(values.platformUrl, values.platformToken);
+    } else {
+      await actions.updateGitHubConfig(values.platformUrl, values.platformToken);
+    }
     onSubmitSuccess?.();
   });
 
@@ -186,6 +215,11 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
     onSubmitSuccess?.();
   });
 
+  // 获取当前平台的标签
+  const currentPlatformLabels = watchedPlatform
+    ? PLATFORM_LABELS[watchedPlatform]
+    : PLATFORM_LABELS.gitlab;
+
   return (
     <div className="settings-form">
       <div className="settings-section">
@@ -207,20 +241,40 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
       </div>
 
       <div className="settings-section">
-        <h4 className="settings-section-title">GitLab 连接</h4>
+        <h4 className="settings-section-title">Git 平台连接</h4>
 
-        <Form {...gitLabForm}>
-          <form onSubmit={onGitLabSubmit}>
+        <Form {...platformForm}>
+          <form onSubmit={onPlatformSubmit}>
             <FormField
-              control={gitLabForm.control}
-              name="gitlabUrl"
+              control={platformForm.control}
+              name="platform"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>平台</FormLabel>
+                  <FormControl>
+                    <Select
+                      options={platformOptions}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="选择平台..."
+                      searchPlaceholder="搜索平台..."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={platformForm.control}
+              name="platformUrl"
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>服务器地址</FormLabel>
                   <FormControl>
                     <Input
                       type="url"
-                      placeholder="https://gitlab.com"
+                      placeholder={currentPlatformLabels.defaultUrl}
                       className={fieldState.invalid ? "error" : ""}
                       {...field}
                     />
@@ -231,8 +285,8 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
             />
 
             <FormField
-              control={gitLabForm.control}
-              name="gitlabToken"
+              control={platformForm.control}
+              name="platformToken"
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>Personal Access Token</FormLabel>
@@ -240,7 +294,7 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
                     <div className="input-with-icon">
                       <Input
                         type={showToken ? "text" : "password"}
-                        placeholder="glpat-xxxxxxxxxxxx"
+                        placeholder={currentPlatformLabels.tokenPlaceholder}
                         className={fieldState.invalid ? "error" : ""}
                         {...field}
                       />
@@ -267,8 +321,8 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
                 type="submit"
                 disabled={
                   isConnecting ||
-                  !gitLabForm.watch("gitlabUrl") ||
-                  !gitLabForm.watch("gitlabToken")
+                  !platformForm.watch("platformUrl") ||
+                  !platformForm.watch("platformToken")
                 }
               >
                 {isConnecting ? (

@@ -3,7 +3,7 @@
  * 封装 fetch + timeout + retry + 统一错误结构
  */
 
-import { createServiceError, isRetryableStatus, toError } from "./errors";
+import { createServiceError, isRetryableStatus, toError, type AIProvider, type GitPlatform } from "./errors";
 import { withRetry, type RetryOptions } from "./retry-policy";
 
 /** 请求配置 */
@@ -22,8 +22,10 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** 重试配置，设为 false 禁用重试 */
   retry?: RetryOptions | false;
-  /** 供应商标识（用于错误结构） */
-  provider?: "openai" | "system";
+  /** AI 供应商标识（用于错误结构） */
+  provider?: AIProvider;
+  /** Git 平台标识（可选，用于区分不同平台的错误） */
+  platform?: GitPlatform;
 }
 
 const DEFAULT_TIMEOUT_MS = 30000;

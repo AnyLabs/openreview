@@ -1,53 +1,60 @@
 import { useState, useCallback, useEffect } from "react";
 import { Folder, GitBranch, GitPullRequest, Settings, Bot } from "lucide-react";
 import { CollapsiblePanel } from "../../../components/ui/CollapsiblePanel";
-import { GroupTreeList as GroupList } from "../../gitlab/components/GroupTreeList";
+import { GroupTreeList } from "../../gitlab/components/GroupTreeList";
 import { ProjectList } from "../../gitlab/components/ProjectList";
-import { MRList } from "../../gitlab/components/MRList";
+import { ReviewList } from "../../gitlab/components/ReviewList";
 import { SettingsModal } from "../../settings/components/SettingsModal";
 import { AIProviderModal } from "../../settings/components/AIProviderModal";
 import { useApp } from "../../../contexts/AppContext";
 import {
-  useGroups,
-  useProjects,
-  useMergeRequests,
-} from "../../../hooks/useGitLab";
+  useOrgs,
+  useRepos,
+  useReviews,
+} from "../../../hooks/usePlatform";
+import { getPlatformLabels } from "../../../constants/platform-labels";
 
 export function Sidebar() {
   const [state] = useApp();
   const {
-    groups,
-    loading: groupsLoading,
-    error: groupsError,
-    fetchGroups,
-  } = useGroups();
+    orgs,
+    loading: orgsLoading,
+    error: orgsError,
+    fetchOrgs,
+  } = useOrgs();
   const {
-    projects,
-    loading: projectsLoading,
-    error: projectsError,
-  } = useProjects(state.selectedGroup?.id);
+    repos,
+    loading: reposLoading,
+    error: reposError,
+  } = useRepos(
+    // GitLab 必须选择组织，GitHub 可以不选组织显示个人仓库
+    state.activePlatform === "github" ? undefined : state.selectedOrg?.id
+  );
   const {
-    mergeRequests,
-    loading: mrsLoading,
-    error: mrsError,
-  } = useMergeRequests(state.selectedProject?.id);
+    reviews,
+    loading: reviewsLoading,
+    error: reviewsError,
+  } = useReviews(state.selectedRepo?.id);
+
+  // 获取当前平台的文案
+  const platformLabels = getPlatformLabels(state.activePlatform);
 
   // 设置弹窗状态
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIProviderModalOpen, setIsAIProviderModalOpen] = useState(false);
 
-  // 连接成功后加载群组
+  // 连接成功后加载组织，平台切换时也刷新组织
   useEffect(() => {
     if (state.isConnected) {
-      fetchGroups();
+      fetchOrgs();
     }
-  }, [state.isConnected, fetchGroups]);
+  }, [state.isConnected, state.activePlatform, fetchOrgs]);
 
   // 面板展开状态
   const [panelStates, setPanelStates] = useState({
-    groups: true,
-    projects: false,
-    mrs: false,
+    orgs: true,
+    repos: false,
+    reviews: false,
   });
 
   // 切换面板展开状态
@@ -57,18 +64,18 @@ export function Sidebar() {
     };
   }, []);
 
-  // 选中群组后：收起群组面板，展开项目面板
-  const handleGroupSelect = useCallback(() => {
-    setPanelStates({ groups: false, projects: true, mrs: false });
+  // 选中组织后：收起组织面板，展开仓库面板
+  const handleOrgSelect = useCallback(() => {
+    setPanelStates({ orgs: false, repos: true, reviews: false });
   }, []);
 
-  // 选中项目后：收起项目面板，展开 MR 面板
-  const handleProjectSelect = useCallback(() => {
-    setPanelStates({ groups: false, projects: false, mrs: true });
+  // 选中仓库后：收起仓库面板，展开 Review 面板
+  const handleRepoSelect = useCallback(() => {
+    setPanelStates({ orgs: false, repos: false, reviews: true });
   }, []);
 
-  // 选中 MR 后：保持 MR 面板展开（不自动收起）
-  const handleMRSelect = useCallback(() => {
+  // 选中 Review 后：保持 Review 面板展开（不自动收起）
+  const handleReviewSelect = useCallback(() => {
     // 不执行任何操作，保持面板状态不变
   }, []);
 
@@ -94,57 +101,57 @@ export function Sidebar() {
     <>
       <aside className="sidebar">
         <div className="sidebar-body">
-          {/* 群组面板 */}
+          {/* 组织面板 */}
           <CollapsiblePanel
-            title="群组"
+            title={platformLabels.org}
             icon={<Folder size={14} />}
-            defaultExpanded={panelStates.groups}
-            badge={groups.length > 0 ? <span>{groups.length}</span> : undefined}
-            onToggle={handleToggle("groups")}
+            defaultExpanded={panelStates.orgs}
+            badge={orgs.length > 0 ? <span>{orgs.length}</span> : undefined}
+            onToggle={handleToggle("orgs")}
           >
-            <GroupList
-              groups={groups}
-              loading={groupsLoading}
-              error={groupsError}
-              onSelect={handleGroupSelect}
+            <GroupTreeList
+              orgs={orgs}
+              loading={orgsLoading}
+              error={orgsError}
+              onSelect={handleOrgSelect}
             />
           </CollapsiblePanel>
 
-          {/* 项目面板 */}
+          {/* 仓库面板 */}
           <CollapsiblePanel
-            title="项目"
+            title={platformLabels.repo}
             icon={<GitBranch size={14} />}
-            defaultExpanded={panelStates.projects}
+            defaultExpanded={panelStates.repos}
             badge={
-              projects.length > 0 ? <span>{projects.length}</span> : undefined
+              repos.length > 0 ? <span>{repos.length}</span> : undefined
             }
-            onToggle={handleToggle("projects")}
+            onToggle={handleToggle("repos")}
           >
             <ProjectList
-              projects={projects}
-              loading={projectsLoading}
-              error={projectsError}
-              onSelect={handleProjectSelect}
+              repos={repos}
+              loading={reposLoading}
+              error={reposError}
+              onSelect={handleRepoSelect}
             />
           </CollapsiblePanel>
 
-          {/* MR面板 */}
+          {/* Review 面板 */}
           <CollapsiblePanel
-            title="合并请求"
+            title={platformLabels.review}
             icon={<GitPullRequest size={14} />}
-            defaultExpanded={panelStates.mrs}
+            defaultExpanded={panelStates.reviews}
             badge={
-              mergeRequests.length > 0 ? (
-                <span>{mergeRequests.length}</span>
+              reviews.length > 0 ? (
+                <span>{reviews.length}</span>
               ) : undefined
             }
-            onToggle={handleToggle("mrs")}
+            onToggle={handleToggle("reviews")}
           >
-            <MRList
-              mergeRequests={mergeRequests}
-              loading={mrsLoading}
-              error={mrsError}
-              onSelect={handleMRSelect}
+            <ReviewList
+              reviews={reviews}
+              loading={reviewsLoading}
+              error={reviewsError}
+              onSelect={handleReviewSelect}
             />
           </CollapsiblePanel>
         </div>

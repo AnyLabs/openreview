@@ -6,28 +6,28 @@
 import { useState, useCallback, useEffect } from "react";
 import { FileDiff } from "./FileDiff";
 import { useFileAIReviewContext } from "../../../hooks/useFileAIReviewContext";
-import { getGitLabClient } from "../../../services/gitlab";
-import type { GitLabFileLineLatestCommitters } from "../../../services/gitlab";
+import { requirePlatformAdapter } from "../../../contexts/PlatformContext";
 import type {
-  GitLabDiff,
-  GitLabMergeRequest,
-  GitLabMergeRequestDiscussion,
-} from "../../../types/gitlab";
-import { buildFileDiscussions } from "../types/gitlabComments";
+  PlatformDiff,
+  PlatformReview,
+} from "../../../types/platform";
+import type { FileLineCommitters } from "../../../types/platform";
+import type { PlatformDiscussion } from "../../../types/platform";
+import { buildFileDiscussions } from "../types/reviewComments";
 
 interface DiffViewerProps {
   /** diff 文件列表 */
-  diffs: GitLabDiff[];
+  diffs: PlatformDiff[];
   /** 当前选中的文件索引 */
   selectedFileIndex?: number | null;
   /** 文件选中回调 */
-  onFileSelect?: (index: number, diff: GitLabDiff) => void;
-  /** 项目 ID */
-  projectId?: number;
-  /** MR IID */
-  mrIid?: number;
-  /** MR diff refs */
-  diffRefs?: GitLabMergeRequest["diff_refs"];
+  onFileSelect?: (index: number, diff: PlatformDiff) => void;
+  /** 仓库 ID */
+  repoId?: number;
+  /** Review IID */
+  reviewIid?: number;
+  /** Review diff refs */
+  diffRefs?: PlatformReview["diffRefs"];
 }
 
 interface DiffChangedLines {
@@ -97,7 +97,7 @@ function extractMentionedLine(content: string): number | null {
 }
 
 function resolveDiffPosition(
-  diff: GitLabDiff,
+  diff: PlatformDiff,
   content: string
 ): { oldLine?: number; newLine?: number } | null {
   const { newLines, oldLines, firstNewLine, firstOldLine } = parseChangedLines(
@@ -131,8 +131,8 @@ export function DiffViewer({
   diffs,
   selectedFileIndex,
   onFileSelect,
-  projectId,
-  mrIid,
+  repoId,
+  reviewIid,
   diffRefs,
 }: DiffViewerProps) {
   // 使用文件级 AI Review Context 共享状态
@@ -141,9 +141,9 @@ export function DiffViewer({
     {}
   );
   const [lineLatestCommittersMap, setLineLatestCommittersMap] = useState<
-    Record<string, GitLabFileLineLatestCommitters>
+    Record<string, FileLineCommitters>
   >({});
-  const [discussions, setDiscussions] = useState<GitLabMergeRequestDiscussion[]>([]);
+  const [discussions, setDiscussions] = useState<PlatformDiscussion[]>([]);
 
   // 记录所有已展开文件索引，默认全部收起
   const [expandedFileIndexes, setExpandedFileIndexes] = useState<Set<number>>(
@@ -152,7 +152,7 @@ export function DiffViewer({
 
   // 切换单个文件展开状态，并在点击标题栏时选中文件
   const handleFileToggle = useCallback(
-    (fileIndex: number, diff: GitLabDiff) => {
+    (fileIndex: number, diff: PlatformDiff) => {
       return (expanded: boolean) => {
         setExpandedFileIndexes((prev) => {
           const next = new Set(prev);
@@ -181,55 +181,64 @@ export function DiffViewer({
 
   // 处理提交评论
   const handleSubmitComment = useCallback(
-    async (diff: GitLabDiff, content: string) => {
-      if (!projectId || !mrIid) return;
+    async (diff: PlatformDiff, content: string) => {
+      if (!repoId || !reviewIid) return;
 
       try {
-        const client = getGitLabClient();
+        const adapter = requirePlatformAdapter();
         const position = resolveDiffPosition(diff, content);
-        const oldPath = diff.old_path || diff.new_path || undefined;
-        const newPath = diff.new_path || diff.old_path || undefined;
+        const oldPath = diff.oldPath || diff.newPath || undefined;
+        const newPath = diff.newPath || diff.oldPath || undefined;
 
         if (diffRefs && position) {
-          await client.postComment(projectId, mrIid, content, {
-            oldPath,
-            newPath,
-            oldLine: position.oldLine,
-            newLine: position.newLine,
-            baseSha: diffRefs.base_sha,
-            headSha: diffRefs.head_sha,
-            startSha: diffRefs.start_sha,
+          await adapter.postComment({
+            repoId,
+            reviewIid,
+            body: content,
+            position: {
+              oldPath,
+              newPath,
+              oldLine: position.oldLine,
+              newLine: position.newLine,
+              baseSha: diffRefs?.baseSha,
+              headSha: diffRefs?.headSha,
+              startSha: diffRefs?.startSha,
+            },
           });
           return;
         }
 
-        await client.postComment(projectId, mrIid, content);
+        await adapter.postComment({
+          repoId,
+          reviewIid,
+          body: content,
+        });
       } catch (e) {
         throw new Error(e instanceof Error ? e.message : "提交评论失败");
       }
     },
-    [projectId, mrIid, diffRefs]
+    [repoId, reviewIid, diffRefs]
   );
 
   useEffect(() => {
     let disposed = false;
 
     const fetchFileAuthors = async () => {
-      if (!projectId || !mrIid) {
+      if (!repoId || !reviewIid) {
         setFileAuthorsMap({});
         setLineLatestCommittersMap({});
         return;
       }
 
       try {
-        const client = getGitLabClient();
+        const adapter = requirePlatformAdapter();
         const [authorData, discussionsData] = await Promise.all([
-          client.getMergeRequestAuthorData(projectId, mrIid),
-          client.getMergeRequestDiscussions(projectId, mrIid),
+          adapter.getReviewAuthorData(repoId, reviewIid),
+          adapter.getReviewDiscussions(repoId, reviewIid),
         ]);
         if (!disposed) {
           setFileAuthorsMap(authorData.fileAuthors);
-          setLineLatestCommittersMap(authorData.lineLatestCommitters);
+          setLineLatestCommittersMap(authorData.lineCommitters);
           setDiscussions(Array.isArray(discussionsData) ? discussionsData : []);
         }
       } catch {
@@ -246,7 +255,7 @@ export function DiffViewer({
     return () => {
       disposed = true;
     };
-  }, [projectId, mrIid]);
+  }, [repoId, reviewIid]);
 
   if (diffs.length === 0) {
     return (
@@ -282,11 +291,11 @@ export function DiffViewer({
       {/* 文件差异列表 */}
       <div className="diff-files-list">
         {diffs.map((diff, index) => {
-          const fileKey = diff.new_path || diff.old_path || `file-${index}`;
+          const fileKey = diff.newPath || diff.oldPath || `file-${index}`;
           const isSelected = selectedFileIndex === index;
-          const filePath = diff.new_path || diff.old_path || "";
-          const oldPath = diff.old_path || filePath;
-          const newPath = diff.new_path || filePath;
+          const filePath = diff.newPath || diff.oldPath || "";
+          const oldPath = diff.oldPath || filePath;
+          const newPath = diff.newPath || filePath;
           const fileDiscussions = buildFileDiscussions(discussions, oldPath, newPath);
 
           // 获取该文件的 AI Review 状态
@@ -304,15 +313,15 @@ export function DiffViewer({
                 diff={diff}
                 commitAuthors={fileAuthorsMap[filePath] || []}
                 lineLatestCommitters={lineLatestCommittersMap[filePath]}
-                gitlabDiscussions={fileDiscussions}
+                discussions={fileDiscussions}
                 defaultExpanded={isExpanded}
                 onToggle={handleFileToggle(index, diff)}
                 isSelected={isSelected}
                 aiReviewResult={fileReviewState.result}
                 aiReviewLoading={fileReviewState.loading}
                 aiReviewError={fileReviewState.error}
-                projectId={projectId}
-                mrIid={mrIid}
+                repoId={repoId}
+                reviewIid={reviewIid}
                 onSubmitComment={(content) => handleSubmitComment(diff, content)}
               />
             </div>

@@ -2,6 +2,9 @@
  * GitLab 相关类型定义
  */
 
+import type { PlatformType } from "./platform";
+
+
 /** GitLab 用户 */
 export interface GitLabUser {
   id: number;
@@ -143,6 +146,15 @@ export interface GitLabConfig {
   token: string;
 }
 
+/** GitHub 配置 */
+export interface GitHubConfig {
+  /** GitHub 服务器地址（默认 https://github.com） */
+  url: string;
+  /** Personal Access Token */
+  token: string;
+}
+
+
 /** 模型信息 */
 export interface ModelInfo {
   /** 模型名称 */
@@ -192,6 +204,9 @@ export interface AIConfig {
 
 /** 应用配置 */
 export interface AppConfig {
+  /** 当前活跃平台 */
+  activePlatform: PlatformType;
   gitlab: GitLabConfig;
+  github: GitHubConfig;
   ai: AIConfig;
 }

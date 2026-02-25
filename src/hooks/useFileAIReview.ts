@@ -7,7 +7,8 @@
 import { useState, useCallback, useRef } from "react";
 import type { AIReviewResult } from "../services/ai";
 import { executeReview } from "../services/review-engine";
-import type { AIConfig, GitLabDiff } from "../types/gitlab";
+import type { AIConfig } from "../types/gitlab";
+import type { PlatformDiff } from "../types/platform";
 
 /** 单个文件的审查状态 */
 export interface FileReviewState {
@@ -155,18 +156,18 @@ export function useFileAIReview() {
    * 逐个文件执行批量审查
    */
   const reviewAllFiles = useCallback(
-    async (changes: GitLabDiff[], aiConfig: AIConfig) => {
+    async (changes: PlatformDiff[], aiConfig: AIConfig) => {
       if (batchRunningRef.current) {
         return;
       }
 
       const reviewQueue = changes
         .map((change) => {
-          const filePath = change.new_path || change.old_path || "";
+          const filePath = change.newPath || change.oldPath || "";
           if (!filePath) return null;
           return {
             filePath,
-            diffContent: `--- a/${change.old_path}\n+++ b/${change.new_path}\n${
+            diffContent: `--- a/${change.oldPath}\n+++ b/${change.newPath}\n${
               change.diff || ""
             }`,
           };

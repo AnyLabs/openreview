@@ -7,8 +7,8 @@ import { useState, useCallback, useEffect } from "react";
 import { Bot, AlertCircle, Loader2, Send, CheckCircle } from "lucide-react";
 import MDEditor from "@uiw/react-md-editor";
 import type { AIReviewResult } from "../../../services/ai";
-import type { GitLabFileLineLatestCommitters } from "../../../services/gitlab";
-import type { GitLabDiscussionThreadView } from "../../diff/types/gitlabComments";
+import type { FileLineCommitters } from "../../../types/platform";
+import type { DiscussionThreadView } from "../../diff/types/reviewComments";
 
 interface FileAIReviewResultProps {
   /** 文件路径 */
@@ -19,18 +19,18 @@ interface FileAIReviewResultProps {
   loading?: boolean;
   /** 错误信息 */
   error?: string | null;
-  /** 项目 ID */
-  projectId?: number;
-  /** MR IID */
-  mrIid?: number;
+  /** 仓库 ID */
+  repoId?: number;
+  /** Review IID */
+  reviewIid?: number;
   /** 提交评论回调 */
   onSubmitComment?: (content: string) => Promise<void>;
-  /** 当前文件的 GitLab 文件级讨论 */
-  gitlabFileDiscussions?: GitLabDiscussionThreadView[];
-  /** 当前文件的 GitLab 评论总数（文件级+行级） */
-  gitlabCommentCount?: number;
+  /** 当前文件的文件级讨论 */
+  fileDiscussions?: DiscussionThreadView[];
+  /** 当前文件的评论总数（文件级+行级） */
+  fileCommentCount?: number;
   /** 当前文件每个变更行对应的最新提交者 */
-  lineLatestCommitters?: GitLabFileLineLatestCommitters;
+  lineLatestCommitters?: FileLineCommitters;
 }
 
 /**
@@ -41,19 +41,19 @@ export function FileAIReviewResult({
   result,
   loading = false,
   error = null,
-  projectId: _projectId,
-  mrIid: _mrIid,
+  repoId: _repoId,
+  reviewIid: _reviewIid,
   onSubmitComment,
-  gitlabFileDiscussions = [],
-  gitlabCommentCount = 0,
+  fileDiscussions = [],
+  fileCommentCount = 0,
   lineLatestCommitters,
 }: FileAIReviewResultProps) {
   const [commentContent, setCommentContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const headerCommentCount =
-    gitlabCommentCount > 0 ? gitlabCommentCount : result?.comments.length || 0;
-  const headerCommentLabel = gitlabCommentCount > 0 ? "GitLab 评论" : "AI 评论";
+    fileCommentCount > 0 ? fileCommentCount : result?.comments.length || 0;
+  const headerCommentLabel = fileCommentCount > 0 ? "平台评论" : "AI 评论";
 
   // 移除 emoji 的辅助函数
   const removeEmoji = useCallback((text: string): string => {
@@ -183,14 +183,14 @@ export function FileAIReviewResult({
     );
   };
 
-  const renderGitLabFileDiscussions = () => {
-    if (gitlabFileDiscussions.length === 0) return null;
+  const renderFileDiscussions = () => {
+    if (fileDiscussions.length === 0) return null;
 
     return (
       <div className="gitlab-file-discussions">
-        <h4>GitLab 文件评论</h4>
+        <h4>文件评论</h4>
         <div className="gitlab-file-discussions-list">
-          {gitlabFileDiscussions.map((thread) => (
+          {fileDiscussions.map((thread) => (
             <div
               key={thread.id}
               className="gitlab-discussion-thread"
@@ -237,7 +237,7 @@ export function FileAIReviewResult({
 
       {/* AI审查结果（如果有） */}
       {renderAIReviewResult()}
-      {renderGitLabFileDiscussions()}
+      {renderFileDiscussions()}
 
       {/* 评论提交表单 - 始终显示 */}
       {onSubmitComment && (

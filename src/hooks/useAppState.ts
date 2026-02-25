@@ -1,61 +1,75 @@
 /**
  * 应用状态管理 Hook
- * 管理全局配置状态和选中项状态
+ * 管理全局配置状态和选中项状态（支持多平台）
  */
 
 import { useState, useCallback, useEffect } from "react";
 import type {
   AppConfig,
   AIConfig,
-  GitLabGroup,
-  GitLabProject,
-  GitLabMergeRequest,
-  GitLabDiff,
 } from "../types/gitlab";
+import type {
+  PlatformType,
+  PlatformOrg,
+  PlatformRepo,
+  PlatformReview,
+  PlatformDiff,
+} from "../types/platform";
+import type { PlatformAdapter } from "../services/platform/types";
 import {
   DEFAULT_CONFIG,
   loadConfig,
   saveGitLabConfig,
+  saveGitHubConfig,
+  saveActivePlatform,
   saveAIConfig,
 } from "../services/storage";
-import { initGitLabClient, destroyGitLabClient } from "../services/gitlab";
+import { createPlatformAdapter } from "../services/platform/factory";
 
 /** 应用状态 */
 export interface AppState {
   /** 配置信息 */
   config: AppConfig;
-  /** GitLab 连接状态 */
+  /** 当前活跃平台 */
+  activePlatform: PlatformType;
+  /** 当前活跃的平台适配器 */
+  activeAdapter: PlatformAdapter | null;
+  /** 平台连接状态 */
   isConnected: boolean;
   /** 连接中 */
   isConnecting: boolean;
   /** 错误信息 */
   error: string | null;
-  /** 当前选中的群组 */
-  selectedGroup: GitLabGroup | null;
-  /** 当前选中的项目 */
-  selectedProject: GitLabProject | null;
-  /** 当前选中的 MR */
-  selectedMR: GitLabMergeRequest | null;
+  /** 当前选中的组织/群组 */
+  selectedOrg: PlatformOrg | null;
+  /** 当前选中的仓库/项目 */
+  selectedRepo: PlatformRepo | null;
+  /** 当前选中的 MR/PR */
+  selectedReview: PlatformReview | null;
   /** 当前选中的文件索引 */
   selectedFileIndex: number | null;
   /** 当前选中的文件 diff */
-  selectedFileDiff: GitLabDiff | null;
+  selectedFileDiff: PlatformDiff | null;
 }
 
 /** 应用状态操作 */
 export interface AppStateActions {
   /** 更新 GitLab 配置 */
   updateGitLabConfig: (url: string, token: string) => Promise<void>;
+  /** 更新 GitHub 配置 */
+  updateGitHubConfig: (url: string, token: string) => Promise<void>;
   /** 更新 AI 配置 */
   updateAIConfig: (config: AIConfig) => Promise<void>;
-  /** 选择群组 */
-  selectGroup: (group: GitLabGroup | null) => void;
-  /** 选择项目 */
-  selectProject: (project: GitLabProject | null) => void;
-  /** 选择 MR */
-  selectMR: (mr: GitLabMergeRequest | null) => void;
+  /** 切换活跃平台 */
+  switchPlatform: (platform: PlatformType) => Promise<void>;
+  /** 选择组织/群组 */
+  selectOrg: (org: PlatformOrg | null) => void;
+  /** 选择仓库/项目 */
+  selectRepo: (repo: PlatformRepo | null) => void;
+  /** 选择 MR/PR */
+  selectReview: (review: PlatformReview | null) => void;
   /** 选择文件 */
-  selectFile: (index: number | null, diff: GitLabDiff | null) => void;
+  selectFile: (index: number | null, diff: PlatformDiff | null) => void;
   /** 断开连接 */
   disconnect: () => void;
   /** 清除错误 */
@@ -65,20 +79,16 @@ export interface AppStateActions {
 /** 应用状态 Hook */
 export function useAppState(): [AppState, AppStateActions] {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
+  const [activePlatform, setActivePlatformState] = useState<PlatformType>(DEFAULT_CONFIG.activePlatform);
+  const [activeAdapter, setActiveAdapterState] = useState<PlatformAdapter | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<GitLabGroup | null>(null);
-  const [selectedProject, setSelectedProject] = useState<GitLabProject | null>(
-    null
-  );
-  const [selectedMR, setSelectedMR] = useState<GitLabMergeRequest | null>(null);
-  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(
-    null
-  );
-  const [selectedFileDiff, setSelectedFileDiff] = useState<GitLabDiff | null>(
-    null
-  );
+  const [selectedOrg, setSelectedOrg] = useState<PlatformOrg | null>(null);
+  const [selectedRepo, setSelectedRepo] = useState<PlatformRepo | null>(null);
+  const [selectedReview, setSelectedReview] = useState<PlatformReview | null>(null);
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
+  const [selectedFileDiff, setSelectedFileDiff] = useState<PlatformDiff | null>(null);
 
   // 初始化配置并尝试自动连接
   useEffect(() => {
@@ -89,10 +99,19 @@ export function useAppState(): [AppState, AppStateActions] {
         const loadedConfig = await loadConfig();
         if (cancelled) return;
         setConfig(loadedConfig);
+        setActivePlatformState(loadedConfig.activePlatform);
 
-        const { gitlab } = loadedConfig;
-        if (gitlab.url && gitlab.token) {
-          initGitLabClient(gitlab.url, gitlab.token);
+        const platformConfig = loadedConfig.activePlatform === "github"
+          ? loadedConfig.github
+          : loadedConfig.gitlab;
+
+        if (platformConfig.url && platformConfig.token) {
+          const adapter = await createPlatformAdapter({
+            type: loadedConfig.activePlatform,
+            url: platformConfig.url,
+            token: platformConfig.token,
+          });
+          setActiveAdapterState(adapter);
           setIsConnected(true);
         }
       } catch (e) {
@@ -115,25 +134,29 @@ export function useAppState(): [AppState, AppStateActions] {
       setError(null);
 
       try {
-        // 初始化客户端
-        initGitLabClient(url, token);
-
-        // 验证连接（获取当前用户）
-        const { getGitLabClient } = await import("../services/gitlab");
-        await getGitLabClient().getCurrentUser();
+        // 创建适配器并验证连接
+        const adapter = await createPlatformAdapter({
+          type: "gitlab",
+          url,
+          token,
+        });
+        await adapter.getCurrentUser();
+        setActiveAdapterState(adapter);
 
         // 保存配置
-        const newConfig = { ...config.gitlab, url, token };
+        const newConfig = { url, token };
         await saveGitLabConfig(newConfig);
         setConfig((prev) => ({ ...prev, gitlab: newConfig }));
+        setActivePlatformState("gitlab");
+        await saveActivePlatform("gitlab");
         setIsConnected(true);
 
         // 清空之前的选中状态
-        setSelectedGroup(null);
-        setSelectedProject(null);
-        setSelectedMR(null);
+        setSelectedOrg(null);
+        setSelectedRepo(null);
+        setSelectedReview(null);
       } catch (e) {
-        destroyGitLabClient();
+        setActiveAdapterState(null);
         setIsConnected(false);
         setError(e instanceof Error ? e.message : "连接失败");
       } finally {
@@ -143,28 +166,110 @@ export function useAppState(): [AppState, AppStateActions] {
     [config]
   );
 
+  // 更新 GitHub 配置并尝试连接
+  const updateGitHubConfig = useCallback(
+    async (url: string, token: string) => {
+      setIsConnecting(true);
+      setError(null);
+
+      try {
+        // 创建适配器并验证连接
+        const adapter = await createPlatformAdapter({
+          type: "github",
+          url,
+          token,
+        });
+        await adapter.getCurrentUser();
+        setActiveAdapterState(adapter);
+
+        // 保存配置
+        const newConfig = { url, token };
+        await saveGitHubConfig(newConfig);
+        setConfig((prev) => ({ ...prev, github: newConfig }));
+        setActivePlatformState("github");
+        await saveActivePlatform("github");
+        setIsConnected(true);
+
+        // 清空之前的选中状态
+        setSelectedOrg(null);
+        setSelectedRepo(null);
+        setSelectedReview(null);
+      } catch (e) {
+        setActiveAdapterState(null);
+        setIsConnected(false);
+        setError(e instanceof Error ? e.message : "连接失败");
+      } finally {
+        setIsConnecting(false);
+      }
+    },
+    [config]
+  );
+
+  // 切换活跃平台
+  const switchPlatform = useCallback(async (platform: PlatformType) => {
+    // 如果已经是当前平台，不做处理
+    if (platform === activePlatform) return;
+
+    setIsConnecting(true);
+    setError(null);
+
+    try {
+      const platformConfig = platform === "github"
+        ? config.github
+        : config.gitlab;
+
+      if (!platformConfig.url || !platformConfig.token) {
+        throw new Error(`请先配置 ${platform === "github" ? "GitHub" : "GitLab"} 连接信息`);
+      }
+
+      // 创建新平台适配器
+      const adapter = await createPlatformAdapter({
+        type: platform,
+        url: platformConfig.url,
+        token: platformConfig.token,
+      });
+      await adapter.getCurrentUser();
+      setActiveAdapterState(adapter);
+
+      setActivePlatformState(platform);
+      await saveActivePlatform(platform);
+      setIsConnected(true);
+
+      // 清空选中状态
+      setSelectedOrg(null);
+      setSelectedRepo(null);
+      setSelectedReview(null);
+    } catch (e) {
+      setActiveAdapterState(null);
+      setIsConnected(false);
+      setError(e instanceof Error ? e.message : "切换平台失败");
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [activePlatform, config]);
+
   // 更新 AI 配置
   const updateAIConfig = useCallback(async (newAIConfig: AIConfig) => {
     await saveAIConfig(newAIConfig);
     setConfig((prev) => ({ ...prev, ai: newAIConfig }));
   }, []);
 
-  // 选择群组
-  const selectGroup = useCallback((group: GitLabGroup | null) => {
-    setSelectedGroup(group);
-    setSelectedProject(null);
-    setSelectedMR(null);
+  // 选择组织/群组
+  const selectOrg = useCallback((org: PlatformOrg | null) => {
+    setSelectedOrg(org);
+    setSelectedRepo(null);
+    setSelectedReview(null);
   }, []);
 
-  // 选择项目
-  const selectProject = useCallback((project: GitLabProject | null) => {
-    setSelectedProject(project);
-    setSelectedMR(null);
+  // 选择仓库/项目
+  const selectRepo = useCallback((repo: PlatformRepo | null) => {
+    setSelectedRepo(repo);
+    setSelectedReview(null);
   }, []);
 
-  // 选择 MR
-  const selectMR = useCallback((mr: GitLabMergeRequest | null) => {
-    setSelectedMR(mr);
+  // 选择 MR/PR
+  const selectReview = useCallback((review: PlatformReview | null) => {
+    setSelectedReview(review);
     // 清空文件选中状态
     setSelectedFileIndex(null);
     setSelectedFileDiff(null);
@@ -172,7 +277,7 @@ export function useAppState(): [AppState, AppStateActions] {
 
   // 选择文件
   const selectFile = useCallback(
-    (index: number | null, diff: GitLabDiff | null) => {
+    (index: number | null, diff: PlatformDiff | null) => {
       setSelectedFileIndex(index);
       setSelectedFileDiff(diff);
     },
@@ -181,11 +286,11 @@ export function useAppState(): [AppState, AppStateActions] {
 
   // 断开连接
   const disconnect = useCallback(() => {
-    destroyGitLabClient();
+    setActiveAdapterState(null);
     setIsConnected(false);
-    setSelectedGroup(null);
-    setSelectedProject(null);
-    setSelectedMR(null);
+    setSelectedOrg(null);
+    setSelectedRepo(null);
+    setSelectedReview(null);
     setSelectedFileIndex(null);
     setSelectedFileDiff(null);
   }, []);
@@ -197,22 +302,26 @@ export function useAppState(): [AppState, AppStateActions] {
 
   const state: AppState = {
     config,
+    activePlatform,
+    activeAdapter,
     isConnected,
     isConnecting,
     error,
-    selectedGroup,
-    selectedProject,
-    selectedMR,
+    selectedOrg,
+    selectedRepo,
+    selectedReview,
     selectedFileIndex,
     selectedFileDiff,
   };
 
   const actions: AppStateActions = {
     updateGitLabConfig,
+    updateGitHubConfig,
     updateAIConfig,
-    selectGroup,
-    selectProject,
-    selectMR,
+    switchPlatform,
+    selectOrg,
+    selectRepo,
+    selectReview,
     selectFile,
     disconnect,
     clearError,

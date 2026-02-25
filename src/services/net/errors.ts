@@ -3,10 +3,16 @@
  * 所有外部服务请求的错误均使用此格式，确保错误信息可观测且可定位
  */
 
+/** AI 供应商标识 */
+export type AIProvider = "openai" | "system";
+
+/** Git 平台标识（用于区分不同平台的错误） */
+export type GitPlatform = "gitlab" | "github";
+
 /** 统一服务错误 */
 export interface ServiceError {
-  /** 供应商标识 */
-  provider: "openai" | "system";
+  /** AI 供应商标识 */
+  provider: AIProvider;
   /** HTTP 状态码 */
   status?: number;
   /** 错误码 */
@@ -17,6 +23,8 @@ export interface ServiceError {
   requestId?: string;
   /** 是否可重试 */
   retryable: boolean;
+  /** Git 平台标识（可选） */
+  platform?: GitPlatform;
 }
 
 /**

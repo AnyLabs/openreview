@@ -15,9 +15,10 @@ const httpUrlSchema = z
     }
   }, urlError);
 
-export const gitLabFormSchema = z.object({
-  gitlabUrl: httpUrlSchema,
-  gitlabToken: z.string().trim().min(1, "请输入 Personal Access Token"),
+export const platformFormSchema = z.object({
+  platform: z.enum(["gitlab", "github"]),
+  platformUrl: httpUrlSchema,
+  platformToken: z.string().trim().min(1, "请输入 Personal Access Token"),
 });
 
 export const aiFormSchema = z
@@ -45,5 +46,5 @@ export const aiFormSchema = z
     }
   });
 
-export type GitLabFormValues = z.infer<typeof gitLabFormSchema>;
+export type PlatformFormValues = z.infer<typeof platformFormSchema>;
 export type AIFormValues = z.infer<typeof aiFormSchema>;

@@ -16,11 +16,12 @@ import { useApp } from "../../../contexts/AppContext";
 import { useAIReview } from "../../../hooks/useAIReview";
 import { useFileAIReviewContext } from "../../../hooks/useFileAIReviewContext";
 import {
-  useMergeRequestChanges,
-  useMergeRequestMergeAction,
-  useMergeRequests,
-} from "../../../hooks/useGitLab";
-import type { GitLabMergeRequest, MergeStrategy } from "../../../types/gitlab";
+  useReviewChanges,
+  useReviewMergeAction,
+  useReviews,
+} from "../../../hooks/usePlatform";
+import type { MergeStrategy } from "../../../types/platform";
+import { getPlatformLabels } from "../../../constants/platform-labels";
 
 type FileReviewMode = "single" | "batch";
 
@@ -31,20 +32,21 @@ export function RightPanel() {
   const [fileReviewMode, setFileReviewMode] = useState<FileReviewMode>("single");
   const [mergeStrategy, setMergeStrategy] = useState<MergeStrategy>("immediate");
   const [mergeCountdown, setMergeCountdown] = useState<number | null>(null);
-  const [mergeQueuedMrId, setMergeQueuedMrId] = useState<number | null>(null);
-  const [nextMrAfterCountdown, setNextMrAfterCountdown] =
-    useState<GitLabMergeRequest | null>(null);
+  const [mergeQueuedReviewId, setMergeQueuedReviewId] = useState<number | null>(null);
+  const [nextReviewAfterCountdown, setNextReviewAfterCountdown] =
+    useState<ReturnType<typeof useReviews>["reviews"][number] | null>(null);
   const [mergeSubmitted, setMergeSubmitted] = useState(false);
   const [mergeSuccessHint, setMergeSuccessHint] = useState<string | null>(null);
-  const previousSelectedMrIdRef = useRef<number | null>(null);
+  const previousSelectedReviewIdRef = useRef<number | null>(null);
   const [state, actions] = useApp();
   const {
     config,
     isConnected,
-    selectedProject,
-    selectedMR,
+    selectedRepo,
+    selectedReview,
     selectedFileIndex,
     selectedFileDiff,
+    activePlatform,
   } = state;
   const {
     loading: reviewLoading,
@@ -57,7 +59,7 @@ export function RightPanel() {
     loading: mergeLoading,
     error: mergeError,
     reset: resetMergeAction,
-  } = useMergeRequestMergeAction();
+  } = useReviewMergeAction();
 
   // 文件级 AI Review - 使用 Context 共享状态
   const {
@@ -70,22 +72,23 @@ export function RightPanel() {
     clearAllResults,
   } = useFileAIReviewContext();
 
-  // 获取 MR 变更用于 AI 审查
-  const { mrWithChanges } = useMergeRequestChanges(
-    selectedProject?.id,
-    selectedMR?.iid
+  // 获取 Review 变更用于 AI 审查
+  const { reviewWithChanges } = useReviewChanges(
+    selectedRepo?.id,
+    selectedReview?.iid
   );
-  const { mergeRequests, fetchMergeRequests } = useMergeRequests(
-    selectedProject?.id
-  );
+  const { reviews, fetchReviews } = useReviews(selectedRepo?.id);
 
-  // 处理开始 MR 级别审查
+  // 获取当前平台的文案
+  const platformLabels = getPlatformLabels(activePlatform);
+
+  // 处理开始 Review 级别审查
   const handleReview = () => {
-    if (mrWithChanges?.changes) {
+    if (reviewWithChanges?.changes) {
       // 合并所有文件的 diff
-      const fullDiff = mrWithChanges.changes
+      const fullDiff = reviewWithChanges.changes
         .map((change) => {
-          const header = `--- a/${change.old_path}\n+++ b/${change.new_path}\n`;
+          const header = `--- a/${change.oldPath}\n+++ b/${change.newPath}\n`;
           return header + (change.diff || "");
         })
         .join("\n");
@@ -95,11 +98,11 @@ export function RightPanel() {
 
   // 处理文件级审查
   const handleFileReview = () => {
-    if (selectedMR && selectedFileDiff && selectedFileIndex !== null) {
+    if (selectedReview && selectedFileDiff && selectedFileIndex !== null) {
       const filePath =
-        selectedFileDiff.new_path || selectedFileDiff.old_path || "";
-      const diffContent = `--- a/${selectedFileDiff.old_path}\n+++ b/${
-        selectedFileDiff.new_path
+        selectedFileDiff.newPath || selectedFileDiff.oldPath || "";
+      const diffContent = `--- a/${selectedFileDiff.oldPath}\n+++ b/${
+        selectedFileDiff.newPath
       }\n${selectedFileDiff.diff || ""}`;
       reviewFile(diffContent, filePath, config.ai);
     }
@@ -116,42 +119,42 @@ export function RightPanel() {
     return Boolean(provider?.id && provider?.apiUrl && provider?.apiKey && model?.id);
   }, [config.ai]);
 
-  const canReviewFile = !!(selectedMR && selectedFileDiff && hasAIConfig);
+  const canReviewFile = !!(selectedReview && selectedFileDiff && hasAIConfig);
 
   // 获取当前选中文件的审查状态
   const selectedFilePath =
-    selectedMR && selectedFileDiff
-      ? selectedFileDiff.new_path || selectedFileDiff.old_path || ""
+    selectedReview && selectedFileDiff
+      ? selectedFileDiff.newPath || selectedFileDiff.oldPath || ""
       : "";
   const fileReviewState = selectedFilePath
     ? getFileState(selectedFilePath)
     : null;
-  const mrChanges = mrWithChanges?.changes || [];
+  const reviewChanges = reviewWithChanges?.changes || [];
 
   const handleBatchReview = () => {
-    if (!mrChanges.length) return;
-    reviewAllFiles(mrChanges, config.ai);
+    if (!reviewChanges.length) return;
+    reviewAllFiles(reviewChanges, config.ai);
   };
 
-  const batchCanStart = mrChanges.length > 0 && hasAIConfig && !batchState.running;
+  const batchCanStart = reviewChanges.length > 0 && hasAIConfig && !batchState.running;
   const batchFinishedCount = batchState.completed + batchState.failed;
   const batchProgress =
     batchState.total > 0
       ? Math.min(100, Math.round((batchFinishedCount / batchState.total) * 100))
       : 0;
-  const noSelectedMr = !selectedMR;
+  const noSelectedReview = !selectedReview;
   const noSelectedFile = !selectedFileDiff;
-  const selectedMrId = selectedMR?.id ?? null;
+  const selectedReviewId = selectedReview?.id ?? null;
 
   const canApproveMerge = Boolean(
     isConnected &&
-      selectedProject?.id &&
-      selectedMR?.iid &&
-      selectedMR.state === "opened"
+      selectedRepo?.id &&
+      selectedReview?.iid &&
+      selectedReview.state === "open"
   );
 
   const handleApproveMerge = async () => {
-    if (!canApproveMerge || !selectedProject || !selectedMR) {
+    if (!canApproveMerge || !selectedRepo || !selectedReview) {
       return;
     }
 
@@ -161,36 +164,36 @@ export function RightPanel() {
         : "立即合并";
 
     const confirmed = window.confirm(
-      `确认通过合并该 MR 吗？\n\n!${selectedMR.iid} ${selectedMR.title}\n${selectedMR.source_branch} -> ${selectedMR.target_branch}\n策略：${strategyLabel}\n\n此操作不可撤销。`
+      `确认通过合并该 ${platformLabels.reviewShort} 吗？\n\n${platformLabels.reviewPrefix}${selectedReview.iid} ${selectedReview.title}\n${selectedReview.sourceBranch} -> ${selectedReview.targetBranch}\n策略：${strategyLabel}\n\n此操作不可撤销。`
     );
     if (!confirmed) {
       return;
     }
 
-    const currentIndex = mergeRequests.findIndex((item) => item.id === selectedMR.id);
-    const nextMr =
-      currentIndex >= 0 && currentIndex < mergeRequests.length - 1
-        ? mergeRequests[currentIndex + 1]
+    const currentIndex = reviews.findIndex((item) => item.id === selectedReview.id);
+    const nextReview =
+      currentIndex >= 0 && currentIndex < reviews.length - 1
+        ? reviews[currentIndex + 1]
         : null;
 
     setMergeSuccessHint(null);
     setMergeCountdown(null);
-    setMergeQueuedMrId(null);
+    setMergeQueuedReviewId(null);
     setMergeSubmitted(false);
-    setNextMrAfterCountdown(nextMr);
+    setNextReviewAfterCountdown(nextReview);
 
     try {
-      const mergedMr = await merge(selectedProject.id, selectedMR.iid, {
-        mergeWhenPipelineSucceeds: mergeStrategy === "pipeline",
+      await merge(selectedRepo.id, selectedReview.iid, {
+        strategy: mergeStrategy,
         shouldRemoveSourceBranch: false,
         squash: false,
       });
 
-      actions.selectMR(mergedMr);
-      setMergeQueuedMrId(mergedMr.id);
+      actions.selectReview(selectedReview);
+      setMergeQueuedReviewId(selectedReview.id);
       setMergeSubmitted(true);
       setMergeCountdown(5);
-      void fetchMergeRequests();
+      void fetchReviews();
     } catch {
       // 错误状态由 Hook 管理并在界面显示
     }
@@ -202,16 +205,16 @@ export function RightPanel() {
     }
 
     if (mergeCountdown <= 0) {
-      if (nextMrAfterCountdown) {
-        actions.selectMR(nextMrAfterCountdown);
+      if (nextReviewAfterCountdown) {
+        actions.selectReview(nextReviewAfterCountdown);
         setMergeSuccessHint(null);
       } else {
         setMergeSuccessHint("当前列表已处理完成");
       }
 
       setMergeCountdown(null);
-      setMergeQueuedMrId(null);
-      setNextMrAfterCountdown(null);
+      setMergeQueuedReviewId(null);
+      setNextReviewAfterCountdown(null);
       return;
     }
 
@@ -225,38 +228,38 @@ export function RightPanel() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [actions, mergeCountdown, nextMrAfterCountdown]);
+  }, [actions, mergeCountdown, nextReviewAfterCountdown]);
 
   useEffect(() => {
-    if (mergeCountdown === null || mergeQueuedMrId === null) {
+    if (mergeCountdown === null || mergeQueuedReviewId === null) {
       return;
     }
 
-    if (selectedMR?.id !== mergeQueuedMrId) {
+    if (selectedReview?.id !== mergeQueuedReviewId) {
       setMergeCountdown(null);
-      setMergeQueuedMrId(null);
-      setNextMrAfterCountdown(null);
+      setMergeQueuedReviewId(null);
+      setNextReviewAfterCountdown(null);
       setMergeSuccessHint(null);
       setMergeSubmitted(false);
     }
-  }, [mergeCountdown, mergeQueuedMrId, selectedMR?.id]);
+  }, [mergeCountdown, mergeQueuedReviewId, selectedReview?.id]);
 
   useEffect(() => {
-    if (previousSelectedMrIdRef.current === selectedMrId) {
+    if (previousSelectedReviewIdRef.current === selectedReviewId) {
       return;
     }
-    previousSelectedMrIdRef.current = selectedMrId;
+    previousSelectedReviewIdRef.current = selectedReviewId;
 
     setFileReviewMode("single");
     resetBatchReview();
     clearAllResults();
     setMergeCountdown(null);
-    setMergeQueuedMrId(null);
-    setNextMrAfterCountdown(null);
+    setMergeQueuedReviewId(null);
+    setNextReviewAfterCountdown(null);
     setMergeSubmitted(false);
     setMergeSuccessHint(null);
     resetMergeAction();
-  }, [selectedMrId, resetBatchReview, clearAllResults, resetMergeAction]);
+  }, [selectedReviewId, resetBatchReview, clearAllResults, resetMergeAction]);
 
   return (
     <aside className="right-panel">
@@ -273,12 +276,12 @@ export function RightPanel() {
             </h3>
           </div>
           <div className="right-panel-body">
-            {noSelectedMr && (
-              <div className="ai-review-top-tip">请先选择一个 MR</div>
+            {noSelectedReview && (
+              <div className="ai-review-top-tip">请先选择一个 {platformLabels.reviewShort}</div>
             )}
             <div
               className={`ai-review-panel file-review-mode-card ${
-                noSelectedMr ? "panel-disabled" : ""
+                noSelectedReview ? "panel-disabled" : ""
               }`}
             >
               <div className="ai-review-header">
@@ -291,7 +294,7 @@ export function RightPanel() {
                     fileReviewMode === "single" ? "active" : ""
                   }`}
                   onClick={() => setFileReviewMode("single")}
-                  disabled={noSelectedMr}
+                  disabled={noSelectedReview}
                 >
                   单文件评审
                 </button>
@@ -300,9 +303,9 @@ export function RightPanel() {
                     fileReviewMode === "batch" ? "active" : ""
                   }`}
                   onClick={() => setFileReviewMode("batch")}
-                  disabled={noSelectedMr}
+                  disabled={noSelectedReview}
                 >
-                  PR 批量评审
+                  {platformLabels.reviewShort} 批量评审
                 </button>
               </div>
             </div>
@@ -310,7 +313,7 @@ export function RightPanel() {
             {fileReviewMode === "single" ? (
               <div
                 className={`ai-review-panel file-review-card ${
-                  noSelectedMr || noSelectedFile ? "panel-disabled" : ""
+                  noSelectedReview || noSelectedFile ? "panel-disabled" : ""
                 }`}
               >
                 <div className="ai-review-header">
@@ -338,7 +341,7 @@ export function RightPanel() {
                     </>
                   )}
                 </button>
-                {!noSelectedMr && !selectedFileDiff && (
+                {!noSelectedReview && !selectedFileDiff && (
                   <div className="file-review-hint">请先在中间区域选择一个文件</div>
                 )}
                 {fileReviewState?.error && (
@@ -350,18 +353,18 @@ export function RightPanel() {
             ) : (
               <div
                 className={`ai-review-panel file-review-card ${
-                  noSelectedMr ? "panel-disabled" : ""
+                  noSelectedReview ? "panel-disabled" : ""
                 }`}
               >
                 <div className="ai-review-header">
                   <ListChecks size={16} />
-                  <span className="file-name">当前 PR 共 {mrChanges.length} 个文件</span>
+                  <span className="file-name">当前 {platformLabels.reviewShort} 共 {reviewChanges.length} 个文件</span>
                 </div>
                 <div className="batch-review-progress">
                   <div className="batch-review-progress-header">
                     <span>进度</span>
                     <span>
-                      {batchFinishedCount}/{batchState.total || mrChanges.length}
+                      {batchFinishedCount}/{batchState.total || reviewChanges.length}
                     </span>
                   </div>
                   <div className="batch-review-progress-track">
@@ -420,7 +423,7 @@ export function RightPanel() {
 
             <div
               className={`ai-review-panel merge-action-card ${
-                noSelectedMr ? "panel-disabled" : ""
+                noSelectedReview ? "panel-disabled" : ""
               }`}
             >
               <div className="ai-review-header">
@@ -434,7 +437,7 @@ export function RightPanel() {
                     name="merge-strategy"
                     checked={mergeStrategy === "immediate"}
                     onChange={() => setMergeStrategy("immediate")}
-                    disabled={noSelectedMr || mergeLoading || mergeCountdown !== null}
+                    disabled={noSelectedReview || mergeLoading || mergeCountdown !== null}
                   />
                   <span>立即合并</span>
                 </label>
@@ -444,7 +447,7 @@ export function RightPanel() {
                     name="merge-strategy"
                     checked={mergeStrategy === "pipeline"}
                     onChange={() => setMergeStrategy("pipeline")}
-                    disabled={noSelectedMr || mergeLoading || mergeCountdown !== null}
+                    disabled={noSelectedReview || mergeLoading || mergeCountdown !== null}
                   />
                   <span>流水线后自动合并</span>
                 </label>
@@ -479,16 +482,16 @@ export function RightPanel() {
               {mergeCountdown !== null && (
                 <div className="merge-countdown-hint">
                   <Clock3 size={12} />
-                  {mergeCountdown}s 后自动跳转到下一个 MR
+                  {mergeCountdown}s 后自动跳转到下一个 {platformLabels.reviewShort}
                 </div>
               )}
               {mergeError && <div className="file-review-error">{mergeError}</div>}
               {mergeSuccessHint && (
                 <div className="merge-completion-hint">{mergeSuccessHint}</div>
               )}
-              {selectedMR && selectedMR.state !== "opened" && (
+              {selectedReview && selectedReview.state !== "open" && (
                 <div className="file-review-hint">
-                  当前 MR 状态为 {selectedMR.state}，不可执行通过合并
+                  当前 {platformLabels.reviewShort} 状态为 {selectedReview.state}，不可执行通过合并
                 </div>
               )}
             </div>
@@ -508,7 +511,7 @@ export function RightPanel() {
           </div>
           <div className="right-panel-body">
             <div className="config-item">
-              <label>GitLab</label>
+              <label>{platformLabels.name}</label>
               <span
                 className={`config-value ${
                   isConnected ? "status-success" : "status-warning"

@@ -10,7 +10,8 @@ import {
   type FileReviewState,
   type FilesReviewState,
 } from "../hooks/useFileAIReview";
-import type { AIConfig, GitLabDiff } from "../types/gitlab";
+import type { AIConfig } from "../types/gitlab";
+import type { PlatformDiff } from "../types/platform";
 
 /** Context 类型 */
 export interface FileAIReviewContextType {
@@ -27,7 +28,7 @@ export interface FileAIReviewContextType {
     aiConfig: AIConfig
   ) => Promise<boolean>;
   /** 执行当前 PR 的逐文件批量审查 */
-  reviewAllFiles: (changes: GitLabDiff[], aiConfig: AIConfig) => Promise<void>;
+  reviewAllFiles: (changes: PlatformDiff[], aiConfig: AIConfig) => Promise<void>;
   /** 停止批量审查（当前文件结束后生效） */
   stopBatchReview: () => void;
   /** 重置批量审查状态 */

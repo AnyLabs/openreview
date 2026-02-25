@@ -1,29 +1,35 @@
 import { FileCode2, Loader2, AlertCircle } from "lucide-react";
 import { useApp } from "../../../contexts/AppContext";
-import { useMergeRequestChanges } from "../../../hooks/useGitLab";
+import { useReviewChanges } from "../../../hooks/usePlatform";
 import { DiffViewer } from "../../diff/components/DiffViewer";
-import type { GitLabDiff } from "../../../types/gitlab";
+import type { PlatformDiff } from "../../../types/platform";
+import { getPlatformLabels } from "../../../constants/platform-labels";
 
 /**
  * 主内容区域组件 - 显示 Diff 视图
  */
 export function MainContent() {
   const [state, actions] = useApp();
-  const { selectedProject, selectedMR, selectedFileIndex } = state;
+  const { selectedRepo, selectedReview, selectedFileIndex } = state;
 
-  // 获取 MR 变更
-  const { mrWithChanges, loading, error } = useMergeRequestChanges(
-    selectedProject?.id,
-    selectedMR?.iid
+  // 获取 Review 变更
+  const { reviewWithChanges, loading, error } = useReviewChanges(
+    selectedRepo?.id,
+    selectedReview?.iid
   );
 
+  // 获取当前平台的文案
+  const platformLabels = state.activePlatform
+    ? getPlatformLabels(state.activePlatform)
+    : getPlatformLabels("gitlab");
+
   // 处理文件选择
-  const handleFileSelect = (index: number, diff: GitLabDiff) => {
+  const handleFileSelect = (index: number, diff: PlatformDiff) => {
     actions.selectFile(index, diff);
   };
 
-  // 未选择 MR
-  if (!selectedMR) {
+  // 未选择 Review
+  if (!selectedReview) {
     return (
       <>
         <header className="main-header">
@@ -36,7 +42,7 @@ export function MainContent() {
               fontSize: "var(--font-size-sm)",
             }}
           >
-            选择一个 MR 查看详情
+            选择一个 {platformLabels.review} 查看详情
           </span>
         </header>
 
@@ -48,7 +54,7 @@ export function MainContent() {
             />
             <h3 className="empty-state-title">暂无变更</h3>
             <p className="empty-state-description">
-              从左侧选择一个 Merge Request 以查看代码变更
+              从左侧选择一个 {platformLabels.review} 以查看代码变更
             </p>
           </div>
         </div>
@@ -62,7 +68,7 @@ export function MainContent() {
       <>
         <header className="main-header">
           <h2 style={{ fontSize: "15px", fontWeight: 600 }}>
-            !{selectedMR.iid} {selectedMR.title}
+            {platformLabels.reviewPrefix}{selectedReview.iid} {selectedReview.title}
           </h2>
           <span
             style={{
@@ -70,7 +76,7 @@ export function MainContent() {
               fontSize: "var(--font-size-sm)",
             }}
           >
-            {selectedMR.source_branch} → {selectedMR.target_branch}
+            {selectedReview.sourceBranch} → {selectedReview.targetBranch}
           </span>
         </header>
 
@@ -93,7 +99,7 @@ export function MainContent() {
       <>
         <header className="main-header">
           <h2 style={{ fontSize: "15px", fontWeight: 600 }}>
-            !{selectedMR.iid} {selectedMR.title}
+            {platformLabels.reviewPrefix}{selectedReview.iid} {selectedReview.title}
           </h2>
         </header>
 
@@ -112,7 +118,7 @@ export function MainContent() {
     <>
       <header className="main-header">
         <h2 style={{ fontSize: "15px", fontWeight: 600 }}>
-          !{selectedMR.iid} {selectedMR.title}
+          {platformLabels.reviewPrefix}{selectedReview.iid} {selectedReview.title}
         </h2>
         <span
           style={{
@@ -120,20 +126,20 @@ export function MainContent() {
             fontSize: "var(--font-size-sm)",
           }}
         >
-          {selectedMR.source_branch} → {selectedMR.target_branch}
-          {mrWithChanges && ` · ${mrWithChanges.changes.length} 个文件`}
+          {selectedReview.sourceBranch} → {selectedReview.targetBranch}
+          {reviewWithChanges && ` · ${reviewWithChanges.changes.length} 个文件`}
         </span>
       </header>
 
       <div className="main-body">
-        {mrWithChanges && mrWithChanges.changes.length > 0 ? (
+        {reviewWithChanges && reviewWithChanges.changes.length > 0 ? (
           <DiffViewer
-            diffs={mrWithChanges.changes}
+            diffs={reviewWithChanges.changes}
             selectedFileIndex={selectedFileIndex}
             onFileSelect={handleFileSelect}
-            projectId={selectedProject?.id}
-            mrIid={selectedMR?.iid}
-            diffRefs={mrWithChanges.diff_refs}
+            repoId={selectedRepo?.id}
+            reviewIid={selectedReview?.iid}
+            diffRefs={reviewWithChanges.diffRefs}
           />
         ) : (
           <div className="empty-state">
@@ -143,7 +149,7 @@ export function MainContent() {
             />
             <h3 className="empty-state-title">没有变更</h3>
             <p className="empty-state-description">
-              此 Merge Request 没有代码变更
+              此 {platformLabels.review} 没有代码变更
             </p>
           </div>
         )}

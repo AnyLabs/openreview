@@ -1,5 +1,5 @@
 /**
- * 群组树形列表组件
+ * 组织/群组树形列表组件
  * 支持层级展示、展开/折叠、每一级都可选中
  */
 
@@ -12,40 +12,44 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { useApp } from "../../../contexts/AppContext";
-import { GitLabGroup } from "../../../types/gitlab";
+import type { PlatformOrg } from "../../../types/platform";
 
-// 群组数据接口
+// 本地 Group 类型（用于树形结构，使用 camelCase）
 interface Group {
   id: number | string;
   name: string;
-  full_name?: string;
-  full_path?: string;
-  parent_id?: number | string | null;
+  path?: string;
+  fullName?: string;
+  fullPath?: string;
+  description?: string;
+  avatarUrl?: string;
+  webUrl?: string;
+  parentId?: number | string | null;
   children?: Group[];
 }
 
-interface GroupTreeListProps {
-  groups: Group[];
+interface OrgTreeListProps {
+  orgs: Group[];
   loading: boolean;
   error: string | null;
   onSelect?: () => void;
 }
 
 // 将扁平数组转换为树形结构
-function buildTree(groups: Group[]): Group[] {
+function buildTree(orgs: Group[]): Group[] {
   const map = new Map<string | number, Group>();
   const roots: Group[] = [];
 
   // 首先创建所有节点的映射
-  groups.forEach((group) => {
-    map.set(group.id, { ...group, children: [] });
+  orgs.forEach((org) => {
+    map.set(org.id, { ...org, children: [] });
   });
 
   // 然后建立父子关系
-  groups.forEach((group) => {
-    const node = map.get(group.id)!;
-    if (group.parent_id && map.has(group.parent_id)) {
-      const parent = map.get(group.parent_id)!;
+  orgs.forEach((org) => {
+    const node = map.get(org.id)!;
+    if (org.parentId && map.has(org.parentId)) {
+      const parent = map.get(org.parentId)!;
       parent.children = parent.children || [];
       parent.children.push(node);
     } else {
@@ -57,7 +61,7 @@ function buildTree(groups: Group[]): Group[] {
 }
 
 // 过滤树形结构（保留匹配的节点及其父路径）
-function filterTree(groups: Group[], query: string): Group[] {
+function filterTree(orgs: Group[], query: string): Group[] {
   const lowerQuery = query.toLowerCase();
 
   function filterNode(node: Group): Group | null {
@@ -75,13 +79,13 @@ function filterTree(groups: Group[], query: string): Group[] {
     return null;
   }
 
-  return groups
-    .map((group) => filterNode(group))
-    .filter((group): group is Group => group !== null);
+  return orgs
+    .map((org) => filterNode(org))
+    .filter((org): org is Group => org !== null);
 }
 
 // 获取所有节点ID（用于展开搜索结果的父节点）
-function getAllNodeIds(groups: Group[]): (string | number)[] {
+function getAllNodeIds(orgs: Group[]): (string | number)[] {
   const ids: (string | number)[] = [];
 
   function traverse(node: Group) {
@@ -89,7 +93,7 @@ function getAllNodeIds(groups: Group[]): (string | number)[] {
     node.children?.forEach(traverse);
   }
 
-  groups.forEach(traverse);
+  orgs.forEach(traverse);
   return ids;
 }
 
@@ -100,7 +104,7 @@ interface TreeNodeProps {
   expandedIds: Set<string | number>;
   selectedId?: string | number;
   onToggle: (id: string | number) => void;
-  onSelect: (group: Group) => void;
+  onSelect: (org: PlatformOrg) => void;
 }
 
 function TreeNode({
@@ -123,7 +127,19 @@ function TreeNode({
   };
 
   const handleSelect = () => {
-    onSelect(node);
+    // 转换为 PlatformOrg
+    const platformOrg: PlatformOrg = {
+      id: node.id,
+      name: node.name,
+      path: node.path || String(node.id),
+      fullName: node.fullName || node.name,
+      fullPath: node.fullPath || String(node.id),
+      description: node.description,
+      avatarUrl: node.avatarUrl,
+      webUrl: node.webUrl,
+      parentId: node.parentId,
+    };
+    onSelect(platformOrg);
   };
 
   return (
@@ -183,14 +199,14 @@ function TreeNode({
 }
 
 /**
- * 群组树形列表组件
+ * 组织/群组树形列表组件
  */
 export function GroupTreeList({
-  groups,
+  orgs,
   loading,
   error,
   onSelect,
-}: GroupTreeListProps) {
+}: OrgTreeListProps) {
   const [state, actions] = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string | number>>(
@@ -198,7 +214,7 @@ export function GroupTreeList({
   );
 
   // 构建树形结构
-  const treeData = useMemo(() => buildTree(groups), [groups]);
+  const treeData = useMemo(() => buildTree(orgs), [orgs]);
 
   // 过滤后的树形数据
   const filteredTreeData = useMemo(() => {
@@ -228,34 +244,18 @@ export function GroupTreeList({
 
   // 选择节点
   const handleSelect = useCallback(
-    (group: Group) => {
-      // 找到原始数据中的完整群组信息
-      const originalGroup = groups.find((g) => g.id === group.id);
-      if (originalGroup) {
-        // 将 Group 转换为 GitLabGroup
-        const gitlabGroup: GitLabGroup = {
-          id: originalGroup.id,
-          name: originalGroup.name,
-          path: originalGroup.full_path || String(originalGroup.id),
-          full_name: originalGroup.name,
-          full_path: originalGroup.full_path || String(originalGroup.id),
-          description: "",
-          avatar_url: null,
-          web_url: "",
-          parent_id: null,
-        };
-        actions.selectGroup(gitlabGroup);
-        onSelect?.();
-      }
+    (org: PlatformOrg) => {
+      actions.selectOrg(org);
+      onSelect?.();
     },
-    [actions, groups, onSelect]
+    [actions, onSelect]
   );
 
   // 未连接时显示提示
   if (!state.isConnected) {
     return (
       <div className="sidebar-section-body">
-        <div className="list-item-hint">请先配置 GitLab 连接</div>
+        <div className="list-item-hint">请先配置 Git 平台连接</div>
       </div>
     );
   }
@@ -294,7 +294,7 @@ export function GroupTreeList({
         />
         <input
           type="text"
-          placeholder="搜索群组..."
+          placeholder="搜索组织..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="panel-search-input"
@@ -305,16 +305,16 @@ export function GroupTreeList({
       <div className="tree-list">
         {filteredTreeData.length === 0 ? (
           <div className="list-item-hint">
-            {searchQuery.trim() ? "无匹配群组" : "暂无群组"}
+            {searchQuery.trim() ? "无匹配组织" : "暂无组织"}
           </div>
         ) : (
-          filteredTreeData.map((group) => (
+          filteredTreeData.map((org) => (
             <TreeNode
-              key={group.id}
-              node={group}
+              key={org.id}
+              node={org}
               level={0}
               expandedIds={effectiveExpandedIds}
-              selectedId={state.selectedGroup?.id}
+              selectedId={state.selectedOrg?.id}
               onToggle={handleToggle}
               onSelect={handleSelect}
             />
@@ -324,5 +324,3 @@ export function GroupTreeList({
     </div>
   );
 }
-
-export type { Group };

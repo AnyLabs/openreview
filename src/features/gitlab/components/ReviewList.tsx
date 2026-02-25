@@ -1,41 +1,46 @@
 /**
- * MR 列表组件
+ * Review（MR/PR）列表组件
  */
 
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { useApp } from "../../../contexts/AppContext";
+import type { PlatformReview } from "../../../types/platform";
+import { getPlatformLabels } from "../../../constants/platform-labels";
 
-interface MRListProps {
-  mergeRequests: any[];
+interface ReviewListProps {
+  reviews: PlatformReview[];
   loading: boolean;
   error: string | null;
   onSelect?: () => void;
 }
 
-export function MRList({
-  mergeRequests,
+export function ReviewList({
+  reviews,
   loading,
   error,
   onSelect,
-}: MRListProps) {
+}: ReviewListProps) {
   const [state, actions] = useApp();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 过滤 MR
-  const filteredMRs = searchQuery.trim()
-    ? mergeRequests.filter(
-        (mr) =>
-          mr.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          String(mr.iid).includes(searchQuery)
-      )
-    : mergeRequests;
+  // 获取当前平台的文案
+  const platformLabels = getPlatformLabels(state.activePlatform);
 
-  // 未选择项目
-  if (!state.selectedProject) {
+  // 过滤 Review
+  const filteredReviews = searchQuery.trim()
+    ? reviews.filter(
+        (review) =>
+          review.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          String(review.iid).includes(searchQuery)
+      )
+    : reviews;
+
+  // 未选择仓库
+  if (!state.selectedRepo) {
     return (
       <div className="sidebar-section-body">
-        <div className="list-item-hint">请先选择项目</div>
+        <div className="list-item-hint">请先选择{platformLabels.repo}</div>
       </div>
     );
   }
@@ -64,10 +69,10 @@ export function MRList({
     );
   }
 
-  /** 获取 MR 状态样式类 */
-  const getStatusClass = (mrState: string) => {
-    switch (mrState) {
-      case "opened":
+  /** 获取 Review 状态样式类 */
+  const getStatusClass = (reviewState: string) => {
+    switch (reviewState) {
+      case "open":
         return "open";
       case "merged":
         return "merged";
@@ -88,32 +93,32 @@ export function MRList({
         />
         <input
           type="text"
-          placeholder="搜索 MR..."
+          placeholder={`搜索${platformLabels.reviewShort}...`}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="panel-search-input"
         />
       </div>
-      {filteredMRs.length === 0 ? (
+      {filteredReviews.length === 0 ? (
         <div className="list-item-hint">
-          {searchQuery.trim() ? "无匹配 MR" : "暂无 MR"}
+          {searchQuery.trim() ? "无匹配结果" : `暂无${platformLabels.reviewShort}`}
         </div>
       ) : (
-        filteredMRs.map((mr) => (
+        filteredReviews.map((review) => (
           <div
-            key={mr.id}
+            key={review.id}
             className={`list-item ${
-              state.selectedMR?.id === mr.id ? "active" : ""
+              state.selectedReview?.id === review.id ? "active" : ""
             }`}
             onClick={() => {
-              actions.selectMR(mr);
+              actions.selectReview(review);
               onSelect?.();
             }}
-            title={mr.title}
+            title={review.title}
           >
-            <span className={`mr-status ${getStatusClass(mr.state)}`} />
+            <span className={`mr-status ${getStatusClass(review.state)}`} />
             <span className="list-item-text">
-              !{mr.iid} {mr.title}
+              {platformLabels.reviewPrefix}{review.iid} {review.title}
             </span>
           </div>
         ))
