@@ -2,19 +2,23 @@
   "name": "code-reviewer",
   "private": true,
   "version": "0.1.0",
+  "description": "GitLab MR AI Code Reviewer desktop app",
+  "author": "Open Reviewer Team",
+  "main": "dist-electron/main.js",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "concurrently -k -s first -n renderer,main,app \"npm:dev:renderer\" \"npm:dev:main\" \"npm:dev:app\"",
+    "dev:renderer": "vite",
+    "dev:main": "tsup electron/main.ts electron/preload.ts --format esm --platform node --external electron --no-splitting --out-dir dist-electron --watch --sourcemap",
+    "dev:app": "wait-on tcp:1420 file:dist-electron/main.js file:dist-electron/preload.js && nodemon --watch dist-electron --ext js,mjs --exec electron .",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:renderer": "vite build",
+    "build:main": "tsup electron/main.ts electron/preload.ts --format esm --platform node --external electron --no-splitting --out-dir dist-electron",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "tauri:build:dmg:ci": "CI=true tauri build --bundles dmg",
-    "tauri:dev:win": "tauri dev --config src-tauri/tauri.windows.conf.json",
-    "tauri:build:win": "tauri build --config src-tauri/tauri.windows.conf.json",
-    "typecheck": "tsc --noEmit",
-    "tauri:permissions:check": "node scripts/check-tauri-permissions.mjs",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win nsis msi",
+    "dist:mac": "npm run build && electron-builder --mac dmg dir",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.electron.json --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "release": "npm version patch && git push && git push --tags",
     "release:minor": "npm version minor && git push && git push --tags",
@@ -25,11 +29,6 @@
     "@pierre/diffs": "^1.0.11",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-dialog": "^2.6.0",
-    "@tauri-apps/plugin-opener": "^2",
-    "@tauri-apps/plugin-shell": "^2.3.5",
-    "@tauri-apps/plugin-store": "^2.4.2",
     "@uiw/react-md-editor": "^4.0.11",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
@@ -40,16 +39,60 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2",
+    "@types/node": "^24.6.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "@vitejs/plugin-react": "^4.6.0",
+    "concurrently": "^9.2.1",
+    "electron": "41.2.0",
+    "electron-builder": "^26.0.12",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.36.1",
     "eslint-plugin-react-hooks": "^4.6.2",
+    "nodemon": "^3.1.10",
+    "tsup": "^8.5.0",
     "typescript": "~5.8.3",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "wait-on": "^8.0.5"
+  },
+  "build": {
+    "appId": "com.nooldey.code-reviewer",
+    "productName": "Open Reviewer",
+    "copyright": "Copyright (c) 2026 Open Reviewer Team",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "dir"
+      ],
+      "icon": "build/icons/icon.icns",
+      "minimumSystemVersion": "10.13"
+    },
+    "dmg": {
+      "writeUpdateInfo": false
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "msi"
+      ],
+      "icon": "build/icons/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

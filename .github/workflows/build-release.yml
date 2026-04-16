@@ -15,14 +15,11 @@ jobs:
       matrix:
         include:
           - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
-            name: 'macOS-arm64'
-          - platform: 'macos-latest'
-            args: '--target x86_64-apple-darwin'
-            name: 'macOS-x64'
+            name: 'macOS'
+            command: 'npm run dist:mac'
           - platform: 'windows-latest'
-            args: ''
             name: 'Windows-x64'
+            command: 'npm run dist:win'
 
     runs-on: ${{ matrix.platform }}
     name: Build (${{ matrix.name }})
@@ -35,39 +32,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - name: Install dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          cache: 'npm'
 
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Verify Tauri capability permissions
-        run: npm run tauri:permissions:check
+      - name: Build Electron app
+        run: ${{ matrix.command }}
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Code Reviewer ${{ github.ref_name }}'
-          releaseBody: |
+          tag_name: ${{ github.ref_name }}
+          name: 'Code Reviewer ${{ github.ref_name }}'
+          body: |
             ## 更新内容
             请查看 [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) 了解详细更新内容。
             
             ## 下载
             - **Windows**: 下载 `.msi` 或 `.exe` 安装包
-            - **macOS (Apple Silicon)**: 下载 `aarch64.dmg` 文件
-            - **macOS (Intel)**: 下载 `x64.dmg` 文件
-          releaseDraft: false
+            - **macOS**: 下载 `.dmg` 安装包
+          draft: false
           prerelease: false
-          args: ${{ matrix.args }}
+          files: |
+            release/**/*

@@ -17,6 +17,7 @@ interface AIProviderConfigPanelProps {
   onClearError: (field: "providerId" | "modelId") => void;
 }
 
-export function AIProviderConfigPanel(_props: AIProviderConfigPanelProps) {
+export function AIProviderConfigPanel(props: AIProviderConfigPanelProps) {
+  void props;
   return null;
 }

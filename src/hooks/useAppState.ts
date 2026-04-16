@@ -14,11 +14,19 @@ import type {
 } from "../types/gitlab";
 import {
   DEFAULT_CONFIG,
+  getLastMigrationInfo,
   loadConfig,
   saveGitLabConfig,
   saveAIConfig,
 } from "../services/storage";
-import { initGitLabClient, destroyGitLabClient } from "../services/gitlab";
+import {
+  initGitLabClient,
+  destroyGitLabClient,
+  getGitLabClient,
+} from "../services/gitlab";
+
+const MIGRATION_SECRETS_RESET_MESSAGE =
+  "已导入旧版 Tauri 配置，但出于安全原因，GitLab Token 和模型 API Key 需要重新填写。";
 
 /** 应用状态 */
 export interface AppState {
@@ -89,6 +97,10 @@ export function useAppState(): [AppState, AppStateActions] {
         const loadedConfig = await loadConfig();
         if (cancelled) return;
         setConfig(loadedConfig);
+        const migration = getLastMigrationInfo();
+        if (migration.secretsNeedReset) {
+          setError(MIGRATION_SECRETS_RESET_MESSAGE);
+        }
 
         const { gitlab } = loadedConfig;
         if (gitlab.url && gitlab.token) {
@@ -119,7 +131,6 @@ export function useAppState(): [AppState, AppStateActions] {
         initGitLabClient(url, token);
 
         // 验证连接（获取当前用户）
-        const { getGitLabClient } = await import("../services/gitlab");
         await getGitLabClient().getCurrentUser();
 
         // 保存配置
@@ -147,6 +158,7 @@ export function useAppState(): [AppState, AppStateActions] {
   const updateAIConfig = useCallback(async (newAIConfig: AIConfig) => {
     await saveAIConfig(newAIConfig);
     setConfig((prev) => ({ ...prev, ai: newAIConfig }));
+    setError(null);
   }, []);
 
   // 选择群组

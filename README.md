@@ -1,6 +1,6 @@
 # Open Reviewer
 
-基于 Tauri 的桌面应用，用于 GitLab Merge Request 的 AI 代码审查。
+基于 Electron 的桌面应用，用于 GitLab Merge Request 的 AI 代码审查。
 
 ## 功能特性
 
@@ -43,7 +43,6 @@ xattr -cr /Applications/Open\ Reviewer.app
 ### 环境要求
 
 - Node.js 18+
-- Rust (最新稳定版)
 - macOS 10.13+ / Windows 10+
 
 ### 开发模式
@@ -53,35 +52,24 @@ xattr -cr /Applications/Open\ Reviewer.app
 npm install
 
 # 启动开发模式 (热重载)
-npm run tauri:dev
+npm run dev
 ```
 
 ### 生产构建
 
 ```bash
 # macOS
-npm run tauri:build
+npm run dist:mac
 
-# macOS（CI/无 Finder 自动化权限环境，推荐用于避免 DMG 打包 -1743 错误）
-npm run tauri:build:dmg:ci
-
-# Windows (使用专用配置)
-npm run tauri:build:win
+# Windows
+npm run dist:win
 ```
 
-如果你在 macOS 打包 DMG 时遇到以下错误：
+### 开发自检清单
 
-- `failed to bundle project error running bundle_dmg.sh`
-- `execution error: 未获得授权将Apple事件发送给Finder。 (-1743)`
-
-可优先使用 `npm run tauri:build:dmg:ci`。该命令会跳过 Finder 美化步骤（不影响安装和运行）。
-
-### 开发自检清单（Tauri 权限）
-
-- 新增 `@tauri-apps/api/*` 调用后，先执行 `npm run tauri:permissions:check`
-- 若校验失败，补齐 `src-tauri/capabilities/default.json` 中对应权限
-- 若新增了校验脚本尚未覆盖的 API，需同步更新 `scripts/check-tauri-permissions.mjs` 的映射规则
-- 提交前建议至少执行一次：`npm run tauri:permissions:check && npm run typecheck`
+- 提交前建议至少执行一次：`npm run typecheck && npm run lint`
+- 本地发版前建议执行：`npm run dist`
+- Electron 渲染进程只通过 `window.desktop` 访问桌面能力，避免在 React 代码中直接引入 Node/Electron API
 
 
 ## 文档

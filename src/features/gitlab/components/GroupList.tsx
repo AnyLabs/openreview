@@ -5,9 +5,10 @@
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { useApp } from "../../../contexts/AppContext";
+import type { GitLabGroup } from "../../../types/gitlab";
 
 interface GroupListProps {
-  groups: any[];
+  groups: GitLabGroup[];
   loading: boolean;
   error: string | null;
   onSelect?: () => void;

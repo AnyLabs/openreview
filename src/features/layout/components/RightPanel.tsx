@@ -41,6 +41,7 @@ export function RightPanel() {
   const {
     config,
     isConnected,
+    error: appError,
     selectedProject,
     selectedMR,
     selectedFileIndex,
@@ -273,6 +274,11 @@ export function RightPanel() {
             </h3>
           </div>
           <div className="right-panel-body">
+            {appError && (
+              <div className="file-review-error" style={{ marginBottom: 12 }}>
+                {appError}
+              </div>
+            )}
             {noSelectedMr && (
               <div className="ai-review-top-tip">请先选择一个 MR</div>
             )}

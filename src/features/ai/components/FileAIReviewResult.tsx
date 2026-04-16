@@ -3,12 +3,13 @@
  * 显示 AI 代码审查结果和提交表单
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { lazy, Suspense, useState, useCallback, useEffect } from "react";
 import { Bot, AlertCircle, Loader2, Send, CheckCircle } from "lucide-react";
-import MDEditor from "@uiw/react-md-editor";
 import type { AIReviewResult } from "../../../services/ai";
 import type { GitLabFileLineLatestCommitters } from "../../../services/gitlab";
 import type { GitLabDiscussionThreadView } from "../../diff/types/gitlabComments";
+
+const MarkdownEditor = lazy(() => import("@uiw/react-md-editor"));
 
 interface FileAIReviewResultProps {
   /** 文件路径 */
@@ -37,12 +38,9 @@ interface FileAIReviewResultProps {
  * 文件级 AI 审查结果组件
  */
 export function FileAIReviewResult({
-  filePath: _filePath,
   result,
   loading = false,
   error = null,
-  projectId: _projectId,
-  mrIid: _mrIid,
   onSubmitComment,
   gitlabFileDiscussions = [],
   gitlabCommentCount = 0,
@@ -254,15 +252,27 @@ export function FileAIReviewResult({
 
           {/* MDEditor */}
           <div className="editor-content">
-            <MDEditor
-              value={commentContent}
-              onChange={(value) => setCommentContent(value || "")}
-              height={200}
-              preview="edit"
-              textareaProps={{
-                placeholder: "在此输入评审意见，支持 Markdown 格式...",
-              }}
-            />
+            <Suspense
+              fallback={
+                <div className="file-ai-review-loading">
+                  <Loader2
+                    className="spin"
+                    size={18}
+                  />
+                  <p>正在加载编辑器...</p>
+                </div>
+              }
+            >
+              <MarkdownEditor
+                value={commentContent}
+                onChange={(value) => setCommentContent(value || "")}
+                height={200}
+                preview="edit"
+                textareaProps={{
+                  placeholder: "在此输入评审意见，支持 Markdown 格式...",
+                }}
+              />
+            </Suspense>
           </div>
 
           {/* 提交按钮 */}

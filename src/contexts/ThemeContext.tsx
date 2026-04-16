@@ -1,8 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { setTheme as setAppTheme } from "@tauri-apps/api/app";
-import { isTauri } from "@tauri-apps/api/core";
-import { getCurrentWindow, type Theme } from "@tauri-apps/api/window";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "../services/storage";
+import { getDesktopBridge } from "../desktop/bridge";
 
 type ResolvedTheme = "dark" | "light";
 
@@ -19,24 +17,25 @@ function getSystemTheme(): ResolvedTheme {
 }
 
 async function syncNativeTheme(themeMode: ThemePreference): Promise<void> {
-  if (!isTauri()) return;
-  const nativeTheme: Theme | null = themeMode === "system" ? null : themeMode;
+  const bridge = getDesktopBridge();
+  if (!bridge) return;
   try {
-    await setAppTheme(nativeTheme);
+    await bridge.setNativeTheme(themeMode);
   } catch (error) {
     console.warn("同步原生窗口主题失败:", error);
   }
 }
 
 async function syncNativeWindowBackground(): Promise<void> {
-  if (!isTauri()) return;
+  const bridge = getDesktopBridge();
+  if (!bridge) return;
   try {
     const styles = getComputedStyle(document.documentElement);
     const backgroundColor =
       styles.getPropertyValue("--native-titlebar-bg").trim() ||
       styles.getPropertyValue("--bg-app").trim();
     if (!backgroundColor) return;
-    await getCurrentWindow().setBackgroundColor(backgroundColor);
+    await bridge.setWindowBackground(backgroundColor);
   } catch (error) {
     console.warn("同步原生窗口背景色失败:", error);
   }

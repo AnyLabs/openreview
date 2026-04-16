@@ -5,9 +5,10 @@
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { useApp } from "../../../contexts/AppContext";
+import type { GitLabMergeRequest } from "../../../types/gitlab";
 
 interface MRListProps {
-  mergeRequests: any[];
+  mergeRequests: GitLabMergeRequest[];
   loading: boolean;
   error: string | null;
   onSelect?: () => void;

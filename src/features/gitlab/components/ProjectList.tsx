@@ -5,9 +5,10 @@
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { useApp } from "../../../contexts/AppContext";
+import type { GitLabProject } from "../../../types/gitlab";
 
 interface ProjectListProps {
-  projects: any[];
+  projects: GitLabProject[];
   loading: boolean;
   error: string | null;
   onSelect?: () => void;

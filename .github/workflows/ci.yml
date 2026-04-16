@@ -7,7 +7,6 @@ on:
     branches: [main]
 
 jobs:
-  # 前端代码检查
   lint:
     runs-on: ubuntu-latest
     name: Lint & Typecheck
@@ -25,9 +24,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify Tauri capability permissions
-        run: npm run tauri:permissions:check
-
       - name: Type check
         run: npm run typecheck
 
@@ -35,7 +31,6 @@ jobs:
         run: npm run lint
         continue-on-error: true # Lint 失败不阻塞 CI
 
-  # 构建测试（不发布）
   build-test:
     needs: lint
     strategy:
@@ -43,11 +38,11 @@ jobs:
       matrix:
         include:
           - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
-            name: 'macOS-arm64'
+            name: 'macOS'
+            command: 'npm run dist:mac -- --publish never'
           - platform: 'windows-latest'
-            args: ''
             name: 'Windows-x64'
+            command: 'npm run dist:win -- --publish never'
 
     runs-on: ${{ matrix.platform }}
     name: Build Test (${{ matrix.name }})
@@ -60,19 +55,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
+          cache: 'npm'
 
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build Tauri app (test only)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: ${{ matrix.args }}
-          # 不创建 release，仅测试构建
+      - name: Build Electron app (test only)
+        run: ${{ matrix.command }}
