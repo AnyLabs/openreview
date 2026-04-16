@@ -17,6 +17,9 @@ jobs:
           - platform: 'macos-latest'
             name: 'macOS'
             command: 'npm run dist:mac'
+          - platform: 'ubuntu-latest'
+            name: 'Linux-x64'
+            command: 'npm run dist'
           - platform: 'windows-latest'
             name: 'Windows-x64'
             command: 'npm run dist:win'
@@ -44,7 +47,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: 'Code Reviewer ${{ github.ref_name }}'
+          name: 'Open Reviewer ${{ github.ref_name }}'
           body: |
             ## 更新内容
             请查看 [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) 了解详细更新内容。
