@@ -54,6 +54,8 @@ function parseChangedLines(diffText: string): DiffChangedLines {
       oldLine = Number.parseInt(hunkMatch[1], 10);
       newLine = Number.parseInt(hunkMatch[2], 10);
       inHunk = true;
+      if (firstNewLine === null) firstNewLine = newLine;
+      if (firstOldLine === null) firstOldLine = oldLine;
       continue;
     }
 
@@ -61,14 +63,12 @@ function parseChangedLines(diffText: string): DiffChangedLines {
 
     if (line.startsWith("+") && !line.startsWith("+++ ")) {
       newLines.add(newLine);
-      if (firstNewLine === null) firstNewLine = newLine;
       newLine += 1;
       continue;
     }
 
     if (line.startsWith("-") && !line.startsWith("--- ")) {
       oldLines.add(oldLine);
-      if (firstOldLine === null) firstOldLine = oldLine;
       oldLine += 1;
       continue;
     }
