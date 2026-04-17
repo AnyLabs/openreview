@@ -74,6 +74,20 @@ export interface GitLabMergeRequest {
   };
   changes_count: string;
   user_notes_count: number;
+  /** 是否为草稿 MR */
+  draft?: boolean;
+  /** 兼容旧版 GitLab 的 WIP 字段 */
+  work_in_progress?: boolean;
+  /** GitLab 粗粒度合并状态 */
+  merge_status?: string;
+  /** GitLab 细粒度合并状态，用于解释不可合并原因 */
+  detailed_merge_status?: string;
+  /** 是否存在冲突 */
+  has_conflicts?: boolean;
+  /** 阻塞讨论是否已全部解决 */
+  blocking_discussions_resolved?: boolean;
+  /** 源分支当前 head SHA */
+  sha?: string;
 }
 
 /** MR 变更文件 */
@@ -133,6 +147,8 @@ export interface GitLabMergeRequestMergeOptions {
   shouldRemoveSourceBranch?: boolean;
   /** 是否压缩提交 */
   squash?: boolean;
+  /** 合并时校验的源分支 head SHA，避免 MR 更新后误合并 */
+  sha?: string;
 }
 
 /** GitLab 配置 */

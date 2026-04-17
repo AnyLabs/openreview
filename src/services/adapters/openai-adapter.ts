@@ -208,7 +208,7 @@ export const createOpenAIAdapter = (config: AIConfig): ProviderAdapter => {
 
     try {
       return await request<ChatCompletionResponse>({
-        url: `${requestConfig.apiUrl}/chat/completions`,
+        url: requestConfig.apiUrl,
         method: "POST",
         headers: {
           "Content-Type": "application/json",

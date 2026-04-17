@@ -2,7 +2,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../../lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "gradient";
+type ButtonVariant = "primary" | "secondary" | "accent" | "danger";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
@@ -12,7 +12,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const variantClassMap: Record<ButtonVariant, string> = {
   primary: "btn btn-primary",
   secondary: "btn btn-secondary",
-  gradient: "btn btn-gradient",
+  accent: "btn btn-accent",
+  danger: "btn btn-danger",
 };
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

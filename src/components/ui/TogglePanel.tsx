@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface TogglePanelProps {
   /** 面板头部左侧内容 */
@@ -92,7 +92,7 @@ export function TogglePanel({
       >
         <div className="toggle-panel-header-left">
           <span className="toggle-panel-chevron">
-            <ChevronRight size={14} />
+            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </span>
           <div className="toggle-panel-header-content">{header}</div>
         </div>

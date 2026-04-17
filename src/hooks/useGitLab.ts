@@ -90,7 +90,7 @@ export function useMergeRequests(
   const fetchMergeRequests = useCallback(async () => {
     if (!isGitLabClientInitialized() || !projectId) {
       setMergeRequests([]);
-      return;
+      return [];
     }
 
     setLoading(true);
@@ -99,9 +99,11 @@ export function useMergeRequests(
     try {
       const data = await getGitLabClient().getMergeRequests(projectId, state);
       setMergeRequests(data);
+      return data;
     } catch (e) {
       setError(e instanceof Error ? e.message : "获取 MR 列表失败");
       setMergeRequests([]);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -197,4 +199,36 @@ export function useMergeRequestMergeAction() {
   }, []);
 
   return { merge, loading, error, success, reset };
+}
+
+/** MR 取消草稿状态操作 Hook */
+export function useMergeRequestReadyAction() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const markReady = useCallback(async (projectId: number, mrIid: number) => {
+    if (!isGitLabClientInitialized()) {
+      throw new Error("GitLab 客户端未初始化");
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      return await getGitLabClient().markMergeRequestReady(projectId, mrIid);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "取消 MR 草稿状态失败";
+      setError(message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    setLoading(false);
+    setError(null);
+  }, []);
+
+  return { markReady, loading, error, reset };
 }

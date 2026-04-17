@@ -1,6 +1,6 @@
 /**
  * 统一 HTTP 客户端
- * 封装 fetch + timeout + retry + 统一错误结构
+ * 封装 fetch + timeout + retry + 统一错误结构 + 代理路由
  */
 
 import { createServiceError, isRetryableStatus, toError } from "./errors";
@@ -27,6 +27,50 @@ export interface RequestOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 30000;
+
+/**
+ * 代理路由配置
+ */
+const PROXY_ROUTES: Record<string, { proxyUrl: string; description: string }> = {
+  "opencode.ai": {
+    proxyUrl: "/api/opencode",
+    description: "OpenCode AI API 代理",
+  },
+  // 可以在这里添加其他域名的代理配置
+  // "api.openai.com": {
+  //   proxyUrl: "/api/openai",
+  //   description: "OpenAI API 代理",
+  // },
+};
+
+/**
+ * 解析并应用代理路由
+ * @param url 原始 URL
+ * @returns 处理后的 URL
+ */
+function resolveProxyUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+
+    // 检查是否有代理配置
+    const proxyConfig = PROXY_ROUTES[hostname];
+    if (proxyConfig) {
+      // 在开发环境中使用代理路径
+      if (typeof window !== "undefined" && window.location.hostname === "127.0.0.1") {
+        const proxyUrl = `${proxyConfig.proxyUrl}${urlObj.pathname}${urlObj.search}`;
+        console.log(`${proxyConfig.description}: ${url} -> ${proxyUrl}`);
+        return proxyUrl;
+      }
+    }
+
+    // 生产环境或无代理配置时直接返回原始 URL
+    return url;
+  } catch {
+    // URL 解析失败时返回原始 URL
+    return url;
+  }
+}
 
 /**
  * 合并外部 signal 与超时 signal
@@ -83,6 +127,9 @@ export const request = async <T>(options: RequestOptions): Promise<T> => {
     const { signal, cleanup } = createCombinedSignal(timeoutMs, externalSignal);
 
     try {
+      // 解析代理路由
+      const resolvedUrl = resolveProxyUrl(url);
+
       const fetchOptions: RequestInit = {
         method,
         headers,
@@ -93,7 +140,7 @@ export const request = async <T>(options: RequestOptions): Promise<T> => {
         fetchOptions.body = JSON.stringify(body);
       }
 
-      const response = await fetch(url, fetchOptions);
+      const response = await fetch(resolvedUrl, fetchOptions);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");

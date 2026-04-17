@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Key,
   Activity,
@@ -18,11 +18,134 @@ import { useFileAIReviewContext } from "../../../hooks/useFileAIReviewContext";
 import {
   useMergeRequestChanges,
   useMergeRequestMergeAction,
+  useMergeRequestReadyAction,
   useMergeRequests,
 } from "../../../hooks/useGitLab";
 import type { GitLabMergeRequest, MergeStrategy } from "../../../types/gitlab";
+import { ConfirmationDialog } from "../../../components/ui/confirmation-dialog";
 
 type FileReviewMode = "single" | "batch";
+
+const MERGE_STATUS_LABELS: Record<string, string> = {
+  mergeable: "可合并",
+  checking: "GitLab 正在检查合并状态",
+  unchecked: "GitLab 尚未完成合并检查",
+  cannot_be_merged: "存在冲突或不可合并",
+  cannot_be_merged_recheck: "合并状态需要重新检查",
+  ci_must_pass: "流水线必须通过后才能合并",
+  ci_still_running: "流水线仍在运行",
+  discussions_not_resolved: "存在未解决讨论",
+  not_approved: "审批未满足要求",
+  draft_status: "MR 仍处于 Draft/WIP 状态",
+  blocked_status: "MR 被阻塞",
+  requested_changes: "评审要求修改后才能合并",
+  status_checks_must_pass: "状态检查必须通过后才能合并",
+};
+
+/** 判断 MR 是否仍处于 Draft/WIP 状态 */
+function isDraftMergeRequest(mr: GitLabMergeRequest | null | undefined): boolean {
+  if (!mr) {
+    return false;
+  }
+
+  return Boolean(
+    mr.draft ||
+      mr.work_in_progress ||
+      mr.detailed_merge_status === "draft_status" ||
+      /^\s*(?:\[Draft\]|\(Draft\)|Draft:|WIP:)/i.test(mr.title)
+  );
+}
+
+/** 生成 MR 合并状态提示 */
+function getMergeStatusHint(
+  mr: GitLabMergeRequest | null | undefined,
+  strategy: MergeStrategy
+): string | null {
+  if (!mr) {
+    return null;
+  }
+
+  if (mr.has_conflicts) {
+    return "GitLab 标记该 MR 存在冲突，需先解决冲突后再合并。";
+  }
+
+  if (mr.blocking_discussions_resolved === false) {
+    return "GitLab 标记该 MR 仍有未解决讨论，需全部解决后再合并。";
+  }
+
+  const status = mr.detailed_merge_status || mr.merge_status;
+  if (!status) {
+    return null;
+  }
+
+  const label = MERGE_STATUS_LABELS[status] || status;
+
+  if (status === "mergeable") {
+    return `GitLab 合并状态：${label}。`;
+  }
+
+  if (
+    strategy === "pipeline" &&
+    ["ci_must_pass", "ci_still_running"].includes(status)
+  ) {
+    return `GitLab 合并状态：${label}。当前选择“流水线后自动合并”，GitLab 会在条件满足后尝试合并。`;
+  }
+
+  return `GitLab 合并状态：${label}。若直接合并返回 405，请先在 GitLab 页面处理对应检查项。`;
+}
+
+/** 判断两个 MR 记录是否指向同一个 GitLab MR */
+function isSameMergeRequest(
+  left: GitLabMergeRequest | null | undefined,
+  right: GitLabMergeRequest | null | undefined
+): boolean {
+  if (!left || !right) {
+    return false;
+  }
+
+  return left.id === right.id || left.iid === right.iid;
+}
+
+/** 从当前 MR 列表中获取当前 MR 后面的下一条记录 */
+function getNextMergeRequest(
+  mergeRequests: GitLabMergeRequest[],
+  currentMr: GitLabMergeRequest
+): GitLabMergeRequest | null {
+  const currentIndex = mergeRequests.findIndex((item) =>
+    isSameMergeRequest(item, currentMr)
+  );
+
+  if (currentIndex < 0 || currentIndex >= mergeRequests.length - 1) {
+    return null;
+  }
+
+  return mergeRequests[currentIndex + 1];
+}
+
+/** 用刷新后的 MR 列表修正倒计时结束时要跳转的目标 */
+function resolveNextMergeRequestAfterRefresh(
+  refreshedMergeRequests: GitLabMergeRequest[],
+  currentMr: GitLabMergeRequest,
+  preferredNextMr: GitLabMergeRequest | null,
+  useFirstRefreshedFallback: boolean
+): GitLabMergeRequest | null {
+  if (preferredNextMr) {
+    const refreshedPreferred = refreshedMergeRequests.find((item) =>
+      isSameMergeRequest(item, preferredNextMr)
+    );
+    return refreshedPreferred || preferredNextMr;
+  }
+
+  if (!useFirstRefreshedFallback) {
+    return null;
+  }
+
+  const fallbackMr = refreshedMergeRequests.find(
+    (item) => !isSameMergeRequest(item, currentMr)
+  );
+
+  return fallbackMr || null;
+}
 
 /**
  * 右侧面板组件 - 显示 AI 审查、Token 信息、应用状态
@@ -36,6 +159,8 @@ export function RightPanel() {
     useState<GitLabMergeRequest | null>(null);
   const [mergeSubmitted, setMergeSubmitted] = useState(false);
   const [mergeSuccessHint, setMergeSuccessHint] = useState<string | null>(null);
+  const [confirmMergeDialogOpen, setConfirmMergeDialogOpen] = useState(false);
+  const [shouldMarkDraftReady, setShouldMarkDraftReady] = useState(false);
   const previousSelectedMrIdRef = useRef<number | null>(null);
   const [state, actions] = useApp();
   const {
@@ -59,6 +184,12 @@ export function RightPanel() {
     error: mergeError,
     reset: resetMergeAction,
   } = useMergeRequestMergeAction();
+  const {
+    markReady,
+    loading: readyLoading,
+    error: readyError,
+    reset: resetReadyAction,
+  } = useMergeRequestReadyAction();
 
   // 文件级 AI Review - 使用 Context 共享状态
   const {
@@ -143,6 +274,13 @@ export function RightPanel() {
   const noSelectedMr = !selectedMR;
   const noSelectedFile = !selectedFileDiff;
   const selectedMrId = selectedMR?.id ?? null;
+  const currentMergeRequest = mrWithChanges || selectedMR;
+  const mergeStatusHint = useMemo(
+    () => getMergeStatusHint(currentMergeRequest, mergeStrategy),
+    [currentMergeRequest, mergeStrategy]
+  );
+  const isCurrentMrDraft = isDraftMergeRequest(currentMergeRequest);
+  const isMergeActionLoading = mergeLoading || readyLoading;
 
   const canApproveMerge = Boolean(
     isConnected &&
@@ -151,28 +289,24 @@ export function RightPanel() {
       selectedMR.state === "opened"
   );
 
-  const handleApproveMerge = async () => {
+  const handleApproveMerge = useCallback(() => {
     if (!canApproveMerge || !selectedProject || !selectedMR) {
       return;
     }
 
-    const strategyLabel =
-      mergeStrategy === "pipeline"
-        ? "流水线通过后自动合并（GitLab CI/CD 通过后）"
-        : "立即合并";
+    setShouldMarkDraftReady(isDraftMergeRequest(currentMergeRequest));
+    setConfirmMergeDialogOpen(true);
+  }, [canApproveMerge, selectedProject, selectedMR, currentMergeRequest]);
 
-    const confirmed = window.confirm(
-      `确认通过合并该 MR 吗？\n\n!${selectedMR.iid} ${selectedMR.title}\n${selectedMR.source_branch} -> ${selectedMR.target_branch}\n策略：${strategyLabel}\n\n此操作不可撤销。`
-    );
-    if (!confirmed) {
+  const handleConfirmMerge = useCallback(async () => {
+    if (!canApproveMerge || !selectedProject || !selectedMR) {
       return;
     }
 
-    const currentIndex = mergeRequests.findIndex((item) => item.id === selectedMR.id);
-    const nextMr =
-      currentIndex >= 0 && currentIndex < mergeRequests.length - 1
-        ? mergeRequests[currentIndex + 1]
-        : null;
+    const hasCurrentMrInList = mergeRequests.some((item) =>
+      isSameMergeRequest(item, selectedMR)
+    );
+    const nextMr = getNextMergeRequest(mergeRequests, selectedMR);
 
     setMergeSuccessHint(null);
     setMergeCountdown(null);
@@ -181,21 +315,54 @@ export function RightPanel() {
     setNextMrAfterCountdown(nextMr);
 
     try {
-      const mergedMr = await merge(selectedProject.id, selectedMR.iid, {
+      const readyMr =
+        shouldMarkDraftReady && isCurrentMrDraft
+          ? await markReady(selectedProject.id, selectedMR.iid)
+          : null;
+      const mrForMerge = readyMr || currentMergeRequest || selectedMR;
+      const headSha = mrForMerge.sha || mrForMerge.diff_refs?.head_sha;
+
+      if (readyMr) {
+        actions.selectMR(readyMr);
+      }
+
+      await merge(selectedProject.id, selectedMR.iid, {
         mergeWhenPipelineSucceeds: mergeStrategy === "pipeline",
         shouldRemoveSourceBranch: false,
         squash: false,
+        sha: headSha,
       });
 
-      actions.selectMR(mergedMr);
-      setMergeQueuedMrId(mergedMr.id);
+      setMergeQueuedMrId(selectedMR.id);
       setMergeSubmitted(true);
       setMergeCountdown(5);
-      void fetchMergeRequests();
+      void fetchMergeRequests().then((refreshedMergeRequests) => {
+        setNextMrAfterCountdown((currentNextMr) =>
+          resolveNextMergeRequestAfterRefresh(
+            refreshedMergeRequests,
+            selectedMR,
+            currentNextMr,
+            !hasCurrentMrInList
+          )
+        );
+      });
     } catch {
       // 错误状态由 Hook 管理并在界面显示
     }
-  };
+  }, [
+    canApproveMerge,
+    selectedProject,
+    selectedMR,
+    mergeRequests,
+    merge,
+    markReady,
+    mergeStrategy,
+    shouldMarkDraftReady,
+    isCurrentMrDraft,
+    currentMergeRequest,
+    actions,
+    fetchMergeRequests,
+  ]);
 
   useEffect(() => {
     if (mergeCountdown === null) {
@@ -256,8 +423,16 @@ export function RightPanel() {
     setNextMrAfterCountdown(null);
     setMergeSubmitted(false);
     setMergeSuccessHint(null);
+    setShouldMarkDraftReady(false);
     resetMergeAction();
-  }, [selectedMrId, resetBatchReview, clearAllResults, resetMergeAction]);
+    resetReadyAction();
+  }, [
+    selectedMrId,
+    resetBatchReview,
+    clearAllResults,
+    resetMergeAction,
+    resetReadyAction,
+  ]);
 
   return (
     <aside className="right-panel">
@@ -440,7 +615,9 @@ export function RightPanel() {
                     name="merge-strategy"
                     checked={mergeStrategy === "immediate"}
                     onChange={() => setMergeStrategy("immediate")}
-                    disabled={noSelectedMr || mergeLoading || mergeCountdown !== null}
+                    disabled={
+                      noSelectedMr || isMergeActionLoading || mergeCountdown !== null
+                    }
                   />
                   <span>立即合并</span>
                 </label>
@@ -450,7 +627,9 @@ export function RightPanel() {
                     name="merge-strategy"
                     checked={mergeStrategy === "pipeline"}
                     onChange={() => setMergeStrategy("pipeline")}
-                    disabled={noSelectedMr || mergeLoading || mergeCountdown !== null}
+                    disabled={
+                      noSelectedMr || isMergeActionLoading || mergeCountdown !== null
+                    }
                   />
                   <span>流水线后自动合并</span>
                 </label>
@@ -460,15 +639,15 @@ export function RightPanel() {
                 onClick={handleApproveMerge}
                 disabled={
                   !canApproveMerge ||
-                  mergeLoading ||
+                  isMergeActionLoading ||
                   mergeCountdown !== null ||
                   mergeSubmitted
                 }
               >
-                {mergeLoading ? (
+                {isMergeActionLoading ? (
                   <>
                     <span className="spinner-small" />
-                    提交中...
+                    {readyLoading ? "取消草稿中..." : "提交中..."}
                   </>
                 ) : mergeSubmitted ? (
                   <>
@@ -485,10 +664,22 @@ export function RightPanel() {
               {mergeCountdown !== null && (
                 <div className="merge-countdown-hint">
                   <Clock3 size={12} />
-                  {mergeCountdown}s 后自动跳转到下一个 MR
+                  {nextMrAfterCountdown
+                    ? `${mergeCountdown}s 后自动跳转到下一个 MR`
+                    : `${mergeCountdown}s 后刷新 MR 列表`}
                 </div>
               )}
-              {mergeError && <div className="file-review-error">{mergeError}</div>}
+              {(mergeError || readyError) && (
+                <div className="file-review-error">{readyError || mergeError}</div>
+              )}
+              {mergeStatusHint && (
+                <div className="merge-status-hint">{mergeStatusHint}</div>
+              )}
+              {isCurrentMrDraft && (
+                <div className="merge-status-hint">
+                  当前 MR 是 Draft，合并前需要取消草稿状态。
+                </div>
+              )}
               {mergeSuccessHint && (
                 <div className="merge-completion-hint">{mergeSuccessHint}</div>
               )}
@@ -559,6 +750,38 @@ export function RightPanel() {
           </div>
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={confirmMergeDialogOpen}
+        onOpenChange={setConfirmMergeDialogOpen}
+        title="确认合并 MR"
+        description={`确认通过合并该 MR 吗？
+
+MR !${selectedMR?.iid} ${selectedMR?.title}
+${selectedMR?.source_branch} -> ${selectedMR?.target_branch}
+策略：${mergeStrategy === "pipeline" ? "流水线通过后自动合并（GitLab CI/CD 通过后）" : "立即合并"}
+${mergeStatusHint ? `当前状态：${mergeStatusHint}` : ""}
+
+此操作不可撤销。`}
+        confirmText="确认合并"
+        cancelText="取消"
+        onConfirm={handleConfirmMerge}
+        variant="destructive"
+      >
+        {isCurrentMrDraft && (
+          <label className="merge-ready-checkbox">
+            <input
+              type="checkbox"
+              checked={shouldMarkDraftReady}
+              onChange={(event) => setShouldMarkDraftReady(event.target.checked)}
+              disabled={isMergeActionLoading}
+            />
+            <span>
+              先取消草稿状态（标记为 Ready），再执行当前合并策略
+            </span>
+          </label>
+        )}
+      </ConfirmationDialog>
     </aside>
   );
 }

@@ -314,6 +314,49 @@
   justify-content: center;
 }
 
+.merge-status-hint {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid color-mix(in srgb, var(--status-warning) 35%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--status-warning-bg) 65%, transparent);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+}
+
+.merge-ready-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--bg-card));
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  cursor: pointer;
+}
+
+.merge-ready-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.merge-ready-checkbox:has(input:focus-visible) {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.merge-ready-checkbox:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .merge-completion-hint {
   margin-top: var(--spacing-sm);
   padding: var(--spacing-sm);
@@ -439,7 +482,7 @@
 
 .batch-review-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+  background: var(--status-success);
   transition: width var(--transition-normal);
 }
 

@@ -4,6 +4,7 @@
  */
 
 import type { AIConfig } from "../types/gitlab";
+import { request } from "./net/http-client";
 
 /** AI 审查评论 */
 export interface AIReviewComment {
@@ -222,11 +223,8 @@ export class AIService {
     return this.parseReviewResult(content);
   }
 
-  /**
-   * 发送请求到 AI API
-   */
   private async sendChatCompletion(
-    request: ChatCompletionRequest,
+    chatRequest: ChatCompletionRequest,
   ): Promise<ChatCompletionResponse> {
     if (!this.config) {
       throw new Error("AI 服务未初始化");
@@ -237,37 +235,25 @@ export class AIService {
     }
 
     const mergedRequest: ChatCompletionRequest = {
-      ...request,
+      ...chatRequest,
       max_tokens: AIService.FIXED_MAX_TOKENS,
     };
 
-    const response = await fetch(`${requestConfig.apiUrl}/chat/completions`, {
+    const response = await request<ChatCompletionResponse>({
+      url: requestConfig.apiUrl,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${requestConfig.apiKey}`,
       },
-      body: JSON.stringify(mergedRequest),
+      body: mergedRequest,
+      provider: "openai",
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      const hint = this.buildApiErrorHint(errorText, request.model);
-      throw new Error(`AI API 错误: ${response.status} - ${errorText}${hint}`);
-    }
-
-    return response.json();
+    return response;
   }
 
-  /**
-   * 生成常见错误的补充提示
-   */
-  private buildApiErrorHint(errorText: string, requestModel: string): string {
-    if (errorText.includes('"code":"1211"')) {
-      return `\n提示：当前模型为 "${requestModel}"，请检查模型 ID 是否与供应商接口要求一致（多数 OpenAI 兼容接口只需要模型 ID，如 "glm-4-plus"）。`;
-    }
-    return "";
-  }
+
 
   /**
    * 从响应中提取内容

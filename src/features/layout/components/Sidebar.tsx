@@ -1,5 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
-import { Folder, GitBranch, GitPullRequest, Settings, Bot } from "lucide-react";
+import {
+  Folder,
+  GitBranch,
+  GitPullRequest,
+  Settings,
+  Bot,
+  RefreshCw,
+} from "lucide-react";
 import { CollapsiblePanel } from "../../../components/ui/CollapsiblePanel";
 import { GroupTreeList as GroupList } from "../../gitlab/components/GroupTreeList";
 import { ProjectList } from "../../gitlab/components/ProjectList";
@@ -13,6 +20,8 @@ import {
   useMergeRequests,
 } from "../../../hooks/useGitLab";
 
+const STORAGE_PANEL_STATES = "sidebar-panel-states";
+
 export function Sidebar() {
   const [state] = useApp();
   const {
@@ -25,16 +34,43 @@ export function Sidebar() {
     projects,
     loading: projectsLoading,
     error: projectsError,
+    fetchProjects,
   } = useProjects(state.selectedGroup?.id);
   const {
     mergeRequests,
     loading: mrsLoading,
     error: mrsError,
+    fetchMergeRequests,
   } = useMergeRequests(state.selectedProject?.id);
 
   // 设置弹窗状态
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIProviderModalOpen, setIsAIProviderModalOpen] = useState(false);
+
+  // 从 localStorage 加载面板状态
+  const loadPanelStates = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_PANEL_STATES);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.warn("Failed to load panel states from localStorage:", error);
+    }
+    return { groups: true, projects: false, mrs: false };
+  }, []);
+
+  // 保存面板状态到 localStorage
+  const savePanelStates = useCallback((states: typeof panelStates) => {
+    try {
+      localStorage.setItem(STORAGE_PANEL_STATES, JSON.stringify(states));
+    } catch (error) {
+      console.warn("Failed to save panel states to localStorage:", error);
+    }
+  }, []);
+
+  // 面板展开状态
+  const [panelStates, setPanelStates] = useState(loadPanelStates);
 
   // 连接成功后加载群组
   useEffect(() => {
@@ -43,17 +79,15 @@ export function Sidebar() {
     }
   }, [state.isConnected, fetchGroups]);
 
-  // 面板展开状态
-  const [panelStates, setPanelStates] = useState({
-    groups: true,
-    projects: false,
-    mrs: false,
-  });
+  // 当面板状态改变时保存到 localStorage
+  useEffect(() => {
+    savePanelStates(panelStates);
+  }, [panelStates, savePanelStates]);
 
   // 切换面板展开状态
   const handleToggle = useCallback((panel: keyof typeof panelStates) => {
     return (expanded: boolean) => {
-      setPanelStates((prev) => ({ ...prev, [panel]: expanded }));
+      setPanelStates((prev: typeof panelStates) => ({ ...prev, [panel]: expanded }));
     };
   }, []);
 
@@ -71,6 +105,30 @@ export function Sidebar() {
   const handleMRSelect = useCallback(() => {
     // 不执行任何操作，保持面板状态不变
   }, []);
+
+  /** 渲染标题栏刷新按钮 */
+  const renderRefreshAction = useCallback(
+    (
+      label: string,
+      loading: boolean,
+      disabled: boolean,
+      onRefresh: () => void
+    ) => (
+      <button
+        type="button"
+        className={`collapsible-panel-action-btn ${
+          loading ? "is-loading" : ""
+        }`}
+        onClick={onRefresh}
+        disabled={disabled || loading}
+        aria-label={label}
+        title={label}
+      >
+        <RefreshCw size={14} />
+      </button>
+    ),
+    []
+  );
 
   // 打开设置弹窗
   const handleOpenSettings = () => {
@@ -100,6 +158,12 @@ export function Sidebar() {
             icon={<Folder size={14} />}
             defaultExpanded={panelStates.groups}
             badge={groups.length > 0 ? <span>{groups.length}</span> : undefined}
+            actions={renderRefreshAction(
+              "刷新群组列表",
+              groupsLoading,
+              !state.isConnected,
+              fetchGroups
+            )}
             onToggle={handleToggle("groups")}
           >
             <GroupList
@@ -118,6 +182,12 @@ export function Sidebar() {
             badge={
               projects.length > 0 ? <span>{projects.length}</span> : undefined
             }
+            actions={renderRefreshAction(
+              "按当前群组刷新项目列表",
+              projectsLoading,
+              !state.isConnected || !state.selectedGroup,
+              fetchProjects
+            )}
             onToggle={handleToggle("projects")}
           >
             <ProjectList
@@ -138,6 +208,12 @@ export function Sidebar() {
                 <span>{mergeRequests.length}</span>
               ) : undefined
             }
+            actions={renderRefreshAction(
+              "按当前项目刷新合并请求列表",
+              mrsLoading,
+              !state.isConnected || !state.selectedProject,
+              fetchMergeRequests
+            )}
             onToggle={handleToggle("mrs")}
           >
             <MRList

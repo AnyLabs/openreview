@@ -73,17 +73,65 @@ export const removeEmoji = (text: string): string =>
 
 /**
  * 解析 AI 返回的审查结果 JSON
- * 支持从 markdown 代码块中提取
+ * 支持从 markdown 代码块中提取，以及多种格式的响应
  */
 export const parseReviewResult = (content: string): AIReviewResult => {
   try {
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
+    let jsonStr: string | null = null;
 
-    const parsed = JSON.parse(jsonStr);
+    // 1. 尝试从 markdown 代码块中提取 JSON
+    const codeBlockMatch = content.match(/```(?:json|javascript)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1].trim();
+    }
+
+    // 2. 如果没有代码块，尝试直接解析整个内容
+    if (!jsonStr) {
+      // 查找第一个 { 和最后一个 }，提取 JSON 部分
+      const firstBrace = content.indexOf("{");
+      const lastBrace = content.lastIndexOf("}");
+
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        jsonStr = content.substring(firstBrace, lastBrace + 1);
+      }
+    }
+
+    // 3. 清理 jsonStr，如果仍为空则返回错误
+    if (!jsonStr) {
+      console.error("[ParseError] 无法从响应中提取 JSON 内容", { content });
+      return {
+        summary: "审查结果解析失败：无法找到 JSON 内容，请检查 AI 响应格式",
+        comments: [],
+      };
+    }
+
+    // 4. 尝试解析 JSON
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error("[JSONParseError] JSON 解析失败", {
+        jsonStr: jsonStr.substring(0, 200) + (jsonStr.length > 200 ? "..." : ""),
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+      return {
+        summary: `审查结果解析失败：JSON 格式无效 (${parseError instanceof Error ? parseError.message : "未知错误"})`,
+        comments: [],
+      };
+    }
+
+    // 5. 验证必要字段并构建结果
+    if (!parsed.summary || typeof parsed.summary !== "string") {
+      console.warn("[ValidationWarning] 缺少 summary 字段或类型不正确");
+    }
+
+    if (!Array.isArray(parsed.comments)) {
+      console.warn("[ValidationWarning] comments 不是数组");
+    }
+
     return {
-      summary: parsed.summary || "无总结",
-      comments: (parsed.comments || []).map(
+      summary: (typeof parsed.summary === "string" ? parsed.summary : null) || "无总结",
+      comments: (Array.isArray(parsed.comments) ? parsed.comments : []).map(
         (c: Record<string, unknown>): AIReviewComment => ({
           line: typeof c.line === "number" ? c.line : 1,
           content: String(c.content || ""),
@@ -95,9 +143,12 @@ export const parseReviewResult = (content: string): AIReviewResult => {
         }),
       ),
     };
-  } catch {
+  } catch (error) {
+    console.error("[UnexpectedError] 解析审查结果时发生意外错误", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
-      summary: "审查结果解析失败，请检查 AI 响应格式",
+      summary: `审查结果解析失败：${error instanceof Error ? error.message : "未知错误"}`,
       comments: [],
     };
   }

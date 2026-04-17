@@ -69,12 +69,11 @@
   width: 16px;
   height: 16px;
   color: var(--text-tertiary);
-  transition: transform var(--transition-fast);
+  transition: color var(--transition-fast);
   flex-shrink: 0;
 }
 
 .toggle-panel.expanded .toggle-panel-chevron {
-  transform: rotate(90deg);
   color: var(--color-primary);
 }
 
@@ -120,7 +119,6 @@
   .toggle-panel-inner,
   .toggle-panel-chevron {
     transition: none !important;
-    transform: none !important;
   }
   
   .toggle-panel-content {

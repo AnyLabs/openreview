@@ -2,7 +2,7 @@
  * 设置表单组件 - GitLab 和 AI 配置
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Save, Eye, EyeOff, Loader2, Check } from "lucide-react";
@@ -15,6 +15,7 @@ import {
   aiFormSchema,
   gitLabFormSchema,
 } from "../schemas/settingsSchemas";
+import { exportConfig, importConfig } from "../../../services/storage";
 import {
   Form,
   FormControl,
@@ -48,6 +49,9 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
 
   const [showToken, setShowToken] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const gitLabForm = useForm<GitLabFormValues>({
     resolver: zodResolver(gitLabFormSchema),
@@ -161,6 +165,54 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
         selectedModel?.id
     );
   }, [config.ai]);
+
+  const handleExport = async () => {
+    try {
+      const json = await exportConfig();
+      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "settings.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setImportMessage("配置已导出到 settings.json");
+    } catch (error) {
+      setImportMessage(
+        `导出失败：${error instanceof Error ? error.message : "未知错误"}`
+      );
+    }
+  };
+
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setImportMessage(null);
+    setImporting(true);
+
+    try {
+      const content = await file.text();
+      const importedConfig = await importConfig(content);
+      await actions.importAppConfig(importedConfig);
+      setImportMessage("配置导入成功");
+    } catch (error) {
+      setImportMessage(
+        `导入失败：${error instanceof Error ? error.message : "无效文件"}`
+      );
+    } finally {
+      setImporting(false);
+      if (importInputRef.current) {
+        importInputRef.current.value = "";
+      }
+    }
+  };
 
   const onGitLabSubmit = gitLabForm.handleSubmit(async (values) => {
     await actions.updateGitLabConfig(values.gitlabUrl, values.gitlabToken);
@@ -291,6 +343,37 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
       </div>
 
       <div className="settings-section">
+        <h4 className="settings-section-title">配置导入/导出</h4>
+        <div className="form-actions">
+          <Button variant="secondary" type="button" onClick={handleExport}>
+            导出配置
+          </Button>
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={handleImportClick}
+            disabled={importing}
+          >
+            {importing ? (
+              <>
+                <Loader2 size={14} className="spin" /> 导入中...
+              </>
+            ) : (
+              "导入配置"
+            )}
+          </Button>
+        </div>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept="application/json,.json"
+          style={{ display: "none" }}
+          onChange={handleImportChange}
+        />
+        {importMessage ? <small className="form-hint">{importMessage}</small> : null}
+      </div>
+
+      <div className="settings-section">
         <h4 className="settings-section-title">AI 配置</h4>
 
         <Form {...aiForm}>
@@ -390,7 +473,7 @@ export function SettingsForm({ onSubmitSuccess }: SettingsFormProps) {
             />
 
             <div className="form-actions">
-              <Button variant="gradient" type="submit" disabled={saveStatus === "loading"}>
+              <Button variant="accent" type="submit" disabled={saveStatus === "loading"}>
                 {saveStatus === "loading" ? (
                   <>
                     <Loader2 size={16} className="spin" />

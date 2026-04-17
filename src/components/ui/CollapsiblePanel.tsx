@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface CollapsiblePanelProps {
   /** 面板标题 */
@@ -17,6 +17,8 @@ interface CollapsiblePanelProps {
   defaultExpanded?: boolean;
   /** 右侧额外内容（如计数器） */
   badge?: ReactNode;
+  /** 标题栏右侧操作 */
+  actions?: ReactNode;
   /** 展开状态变化回调 */
   onToggle?: (expanded: boolean) => void;
   /** 自定义类名 */
@@ -29,6 +31,7 @@ export function CollapsiblePanel({
   children,
   defaultExpanded = true,
   badge,
+  actions,
   onToggle,
   className = "",
 }: CollapsiblePanelProps) {
@@ -68,21 +71,25 @@ export function CollapsiblePanel({
       } ${className}`}
     >
       {/* 面板头部 */}
-      <button
-        className="collapsible-panel-header"
-        onClick={handleToggle}
-        aria-expanded={expanded}
-        aria-controls={`panel-content-${title}`}
-      >
-        <div className="collapsible-panel-header-left">
+      <div className="collapsible-panel-header">
+        <button
+          type="button"
+          className="collapsible-panel-toggle"
+          onClick={handleToggle}
+          aria-expanded={expanded}
+          aria-controls={`panel-content-${title}`}
+        >
           <span className="collapsible-panel-chevron">
-            <ChevronRight size={14} />
+            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </span>
           {icon && <span className="collapsible-panel-icon">{icon}</span>}
           <span className="collapsible-panel-title">{title}</span>
+        </button>
+        <div className="collapsible-panel-header-actions">
+          {badge && <div className="collapsible-panel-badge">{badge}</div>}
+          {actions}
         </div>
-        {badge && <div className="collapsible-panel-badge">{badge}</div>}
-      </button>
+      </div>
 
       {/* 面板内容 */}
       <div

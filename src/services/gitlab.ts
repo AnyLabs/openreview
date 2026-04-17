@@ -52,6 +52,70 @@ interface GitLabMergeRequestAuthorData {
   lineLatestCommitters: Record<string, GitLabFileLineLatestCommitters>;
 }
 
+/** 将 GitLab 返回的错误 body 转成可读文本 */
+function parseGitLabErrorBody(errorBody: string): string {
+  if (!errorBody) {
+    return "";
+  }
+
+  try {
+    const parsed = JSON.parse(errorBody) as {
+      message?: string | string[] | Record<string, string[]>;
+      error?: string;
+    };
+
+    if (typeof parsed.message === "string") {
+      return parsed.message;
+    }
+
+    if (Array.isArray(parsed.message)) {
+      return parsed.message.join("；");
+    }
+
+    if (parsed.message && typeof parsed.message === "object") {
+      return Object.entries(parsed.message)
+        .map(([key, value]) => `${key}: ${value.join("；")}`)
+        .join("；");
+    }
+
+    if (typeof parsed.error === "string") {
+      return parsed.error;
+    }
+  } catch {
+    // 非 JSON 错误 body 直接回退到原文。
+  }
+
+  return errorBody;
+}
+
+/** 根据 GitLab 状态码生成面向用户的错误提示 */
+function formatGitLabError(status: number, errorBody: string): string {
+  const parsedMessage = parseGitLabErrorBody(errorBody);
+
+  if (status === 405) {
+    return [
+      "GitLab 拒绝合并当前 MR（405）：当前 MR 可能未满足合并条件。",
+      "请检查流水线、审批、未解决讨论、冲突、Draft/WIP 状态或 GitLab 的合并检查项。",
+      "如果项目要求流水线通过后才能合并，可以选择“流水线后自动合并”。",
+      parsedMessage ? `原始信息：${parsedMessage}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (status === 409) {
+    return [
+      "GitLab 拒绝合并当前 MR（409）：MR 内容可能已更新或存在并发合并冲突。",
+      "请刷新 MR 后重试。",
+      parsedMessage ? `原始信息：${parsedMessage}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return `GitLab API Error: ${status}${parsedMessage ? ` - ${parsedMessage}` : ""}`;
+}
+
 /** 解析 diff 内容，提取新增/删除行号 */
 function parseDiffChangedLines(diffContent: string): {
   additions: number[];
@@ -125,7 +189,7 @@ class GitLabClient {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`GitLab API Error: ${response.status} - ${error}`);
+      throw new Error(formatGitLabError(response.status, error));
     }
 
     return response.json();
@@ -181,9 +245,7 @@ class GitLabClient {
     mrIid: number
   ): Promise<GitLabMergeRequestWithChanges> {
     // 获取 MR 详情
-    const mr = await this.request<GitLabMergeRequest>(
-      `/projects/${projectId}/merge_requests/${mrIid}`
-    );
+    const mr = await this.getMergeRequest(projectId, mrIid);
 
     // 获取变更列表 - GitLab API 直接返回 diffs 数组
     const diffs = await this.request<GitLabMergeRequestWithChanges["changes"]>(
@@ -194,6 +256,16 @@ class GitLabClient {
       ...mr,
       changes: Array.isArray(diffs) ? diffs : [],
     };
+  }
+
+  /** 获取 MR 详情 */
+  async getMergeRequest(
+    projectId: number,
+    mrIid: number
+  ): Promise<GitLabMergeRequest> {
+    return this.request<GitLabMergeRequest>(
+      `/projects/${projectId}/merge_requests/${mrIid}`
+    );
   }
 
   /** 获取 MR 下的讨论列表 */
@@ -396,19 +468,39 @@ class GitLabClient {
       mergeWhenPipelineSucceeds = false,
       shouldRemoveSourceBranch = false,
       squash = false,
+      sha,
     } = options || {};
+
+    const body: Record<string, boolean | string> = {
+      merge_when_pipeline_succeeds: mergeWhenPipelineSucceeds,
+      should_remove_source_branch: shouldRemoveSourceBranch,
+      squash,
+    };
+
+    if (sha) {
+      body.sha = sha;
+    }
 
     return this.request<GitLabMergeRequest>(
       `/projects/${projectId}/merge_requests/${mrIid}/merge`,
       {
         method: "PUT",
-        body: JSON.stringify({
-          merge_when_pipeline_succeeds: mergeWhenPipelineSucceeds,
-          should_remove_source_branch: shouldRemoveSourceBranch,
-          squash,
-        }),
+        body: JSON.stringify(body),
       }
     );
+  }
+
+  /** 取消 MR 草稿状态 */
+  async markMergeRequestReady(
+    projectId: number,
+    mrIid: number
+  ): Promise<GitLabMergeRequest> {
+    await this.request(`/projects/${projectId}/merge_requests/${mrIid}/notes`, {
+      method: "POST",
+      body: JSON.stringify({ body: "/ready" }),
+    });
+
+    return this.getMergeRequest(projectId, mrIid);
   }
 }
 

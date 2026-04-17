@@ -28,6 +28,11 @@ import {
 const MIGRATION_SECRETS_RESET_MESSAGE =
   "已导入旧版 Tauri 配置，但出于安全原因，GitLab Token 和模型 API Key 需要重新填写。";
 
+// 本地存储键名
+const STORAGE_SELECTED_GROUP = "selected-group";
+const STORAGE_SELECTED_PROJECT = "selected-project";
+const STORAGE_SELECTED_MR = "selected-mr";
+
 /** 应用状态 */
 export interface AppState {
   /** 配置信息 */
@@ -56,6 +61,8 @@ export interface AppStateActions {
   updateGitLabConfig: (url: string, token: string) => Promise<void>;
   /** 更新 AI 配置 */
   updateAIConfig: (config: AIConfig) => Promise<void>;
+  /** 导入完整配置 */
+  importAppConfig: (config: AppConfig) => Promise<void>;
   /** 选择群组 */
   selectGroup: (group: GitLabGroup | null) => void;
   /** 选择项目 */
@@ -88,6 +95,56 @@ export function useAppState(): [AppState, AppStateActions] {
     null
   );
 
+  // 从 localStorage 加载选中项
+  const loadSelectedItems = useCallback(() => {
+    try {
+      const savedGroup = localStorage.getItem(STORAGE_SELECTED_GROUP);
+      const savedProject = localStorage.getItem(STORAGE_SELECTED_PROJECT);
+      const savedMR = localStorage.getItem(STORAGE_SELECTED_MR);
+
+      if (savedGroup) {
+        setSelectedGroup(JSON.parse(savedGroup));
+      }
+      if (savedProject) {
+        setSelectedProject(JSON.parse(savedProject));
+      }
+      if (savedMR) {
+        setSelectedMR(JSON.parse(savedMR));
+      }
+    } catch (error) {
+      console.warn("Failed to load selected items from localStorage:", error);
+    }
+  }, []);
+
+  // 保存选中项到 localStorage
+  const saveSelectedItems = useCallback((
+    group: GitLabGroup | null,
+    project: GitLabProject | null,
+    mr: GitLabMergeRequest | null
+  ) => {
+    try {
+      if (group) {
+        localStorage.setItem(STORAGE_SELECTED_GROUP, JSON.stringify(group));
+      } else {
+        localStorage.removeItem(STORAGE_SELECTED_GROUP);
+      }
+
+      if (project) {
+        localStorage.setItem(STORAGE_SELECTED_PROJECT, JSON.stringify(project));
+      } else {
+        localStorage.removeItem(STORAGE_SELECTED_PROJECT);
+      }
+
+      if (mr) {
+        localStorage.setItem(STORAGE_SELECTED_MR, JSON.stringify(mr));
+      } else {
+        localStorage.removeItem(STORAGE_SELECTED_MR);
+      }
+    } catch (error) {
+      console.warn("Failed to save selected items to localStorage:", error);
+    }
+  }, []);
+
   // 初始化配置并尝试自动连接
   useEffect(() => {
     let cancelled = false;
@@ -106,6 +163,8 @@ export function useAppState(): [AppState, AppStateActions] {
         if (gitlab.url && gitlab.token) {
           initGitLabClient(gitlab.url, gitlab.token);
           setIsConnected(true);
+          // 连接成功后加载之前选中的项
+          loadSelectedItems();
         }
       } catch (e) {
         if (cancelled) return;
@@ -118,7 +177,7 @@ export function useAppState(): [AppState, AppStateActions] {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadSelectedItems]);
 
   // 更新 GitLab 配置并尝试连接
   const updateGitLabConfig = useCallback(
@@ -143,6 +202,10 @@ export function useAppState(): [AppState, AppStateActions] {
         setSelectedGroup(null);
         setSelectedProject(null);
         setSelectedMR(null);
+        // 清除本地存储的选中项
+        localStorage.removeItem(STORAGE_SELECTED_GROUP);
+        localStorage.removeItem(STORAGE_SELECTED_PROJECT);
+        localStorage.removeItem(STORAGE_SELECTED_MR);
       } catch (e) {
         destroyGitLabClient();
         setIsConnected(false);
@@ -161,18 +224,42 @@ export function useAppState(): [AppState, AppStateActions] {
     setError(null);
   }, []);
 
+  const importAppConfig = useCallback(async (newConfig: AppConfig) => {
+    setError(null);
+
+    try {
+      setConfig(newConfig);
+
+      if (newConfig.gitlab.url && newConfig.gitlab.token) {
+        initGitLabClient(newConfig.gitlab.url, newConfig.gitlab.token);
+        await getGitLabClient().getCurrentUser();
+        setIsConnected(true);
+      } else {
+        destroyGitLabClient();
+        setIsConnected(false);
+      }
+    } catch (e) {
+      destroyGitLabClient();
+      setIsConnected(false);
+      setError(e instanceof Error ? e.message : "导入配置失败");
+      throw e;
+    }
+  }, []);
+
   // 选择群组
   const selectGroup = useCallback((group: GitLabGroup | null) => {
     setSelectedGroup(group);
     setSelectedProject(null);
     setSelectedMR(null);
-  }, []);
+    saveSelectedItems(group, null, null);
+  }, [saveSelectedItems]);
 
   // 选择项目
   const selectProject = useCallback((project: GitLabProject | null) => {
     setSelectedProject(project);
     setSelectedMR(null);
-  }, []);
+    saveSelectedItems(selectedGroup, project, null);
+  }, [selectedGroup, saveSelectedItems]);
 
   // 选择 MR
   const selectMR = useCallback((mr: GitLabMergeRequest | null) => {
@@ -180,7 +267,8 @@ export function useAppState(): [AppState, AppStateActions] {
     // 清空文件选中状态
     setSelectedFileIndex(null);
     setSelectedFileDiff(null);
-  }, []);
+    saveSelectedItems(selectedGroup, selectedProject, mr);
+  }, [selectedGroup, selectedProject, saveSelectedItems]);
 
   // 选择文件
   const selectFile = useCallback(
@@ -200,6 +288,10 @@ export function useAppState(): [AppState, AppStateActions] {
     setSelectedMR(null);
     setSelectedFileIndex(null);
     setSelectedFileDiff(null);
+    // 清除本地存储的选中项
+    localStorage.removeItem(STORAGE_SELECTED_GROUP);
+    localStorage.removeItem(STORAGE_SELECTED_PROJECT);
+    localStorage.removeItem(STORAGE_SELECTED_MR);
   }, []);
 
   // 清除错误
@@ -222,6 +314,7 @@ export function useAppState(): [AppState, AppStateActions] {
   const actions: AppStateActions = {
     updateGitLabConfig,
     updateAIConfig,
+    importAppConfig,
     selectGroup,
     selectProject,
     selectMR,

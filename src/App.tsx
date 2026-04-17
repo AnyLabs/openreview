@@ -5,6 +5,7 @@ import "./styles/forms.css";
 import "./styles/diff.css";
 import "./styles/ai-review.css";
 import "./styles/collapsible-panel.css";
+import "./styles/dialog.css";
 import "./styles/searchable-select.css";
 import "./styles/settings-modal.css";
 import "./styles/select-field-skeleton.css";

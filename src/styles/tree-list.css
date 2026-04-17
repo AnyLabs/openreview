@@ -52,7 +52,7 @@
   transform: translateY(-50%);
   width: 3px;
   height: 60%;
-  background: var(--gradient-accent);
+  background: var(--color-primary);
   border-radius: var(--radius-full);
 }
 

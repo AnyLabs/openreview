@@ -1,6 +1,6 @@
 /* ==========================================================================
    CodexMonitor 风格设计系统 - Dark Theme v1.0
-   深蓝渐变背景 + 圆角卡片 + 微妙发光效果
+   深色纯色背景 + 圆角卡片 + 微妙边框效果
    ========================================================================== */
 
 :root {
@@ -27,11 +27,6 @@
   --bg-input: #0f1014;
   --bg-active: rgba(99, 102, 241, 0.12);
   --bg-hover: rgba(255, 255, 255, 0.03);
-
-  /* ==================== 渐变背景 ==================== */
-  --gradient-bg: linear-gradient(180deg, #0a0b0f 0%, #0d0e14 100%);
-  --gradient-card: linear-gradient(180deg, #1a1b23 0%, #17181f 100%);
-  --gradient-accent: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 
   /* ==================== 边框系统 ==================== */
   --border-subtle: rgba(255, 255, 255, 0.06);
@@ -134,9 +129,6 @@
   --bg-active: rgba(99, 102, 241, 0.08);
   --bg-hover: rgba(0, 0, 0, 0.02);
 
-  --gradient-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  --gradient-card: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-
   --border-subtle: rgba(0, 0, 0, 0.06);
   --border-default: rgba(0, 0, 0, 0.1);
   --border-medium: rgba(0, 0, 0, 0.15);
@@ -231,11 +223,7 @@ body {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-normal);
   color: var(--text-primary);
-  background:
-    radial-gradient(1200px 640px at 10% -10%, rgba(99, 102, 241, 0.18), transparent 62%),
-    radial-gradient(860px 560px at 92% 12%, rgba(56, 189, 248, 0.16), transparent 66%),
-    radial-gradient(980px 700px at 50% 120%, rgba(139, 92, 246, 0.14), transparent 68%),
-    var(--gradient-bg);
+  background: var(--bg-app);
   line-height: var(--line-height-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -247,11 +235,8 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 46px 46px;
-  opacity: 0.24;
+  background: transparent;
+  opacity: 0;
   z-index: 0;
 }
 
@@ -379,11 +364,8 @@ img {
 }
 
 /* ==================== 工具类 ==================== */
-.text-gradient {
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.text-accent {
+  color: var(--text-accent);
 }
 
 .sr-only {

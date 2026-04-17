@@ -1,6 +1,6 @@
 /* ==========================================================================
    CodexMonitor 风格表单样式 - Dark Theme v1.0
-   圆角卡片 + 渐变按钮 + 微妙边框
+   圆角卡片 + 纯色按钮 + 微妙边框
    ========================================================================== */
 
 /* ==================== 设置表单容器 ==================== */
@@ -197,7 +197,7 @@
 }
 
 .form-checkbox input[type="checkbox"]:checked + .form-checkbox-box {
-  background: var(--gradient-accent);
+  background: var(--color-primary);
   border-color: transparent;
 }
 
@@ -252,7 +252,7 @@
 }
 
 .form-switch input[type="checkbox"]:checked + .form-switch-track {
-  background: var(--gradient-accent);
+  background: var(--color-primary);
   border-color: transparent;
 }
 
@@ -292,10 +292,10 @@
   cursor: not-allowed;
 }
 
-/* 主按钮 - 渐变 */
+/* 主按钮 */
 .btn-primary {
   color: white;
-  background: var(--gradient-accent);
+  background: var(--color-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -340,46 +340,26 @@
   background: var(--bg-hover);
 }
 
-/* 多彩渐变按钮 - 保存配置专用，与主按钮风格一致 */
-.btn-gradient {
+/* 强调按钮 - 保存配置专用，与主按钮风格一致 */
+.btn-accent {
   color: white;
-  background: var(--gradient-accent);
+  background: var(--color-primary);
   border: none;
   position: relative;
   overflow: hidden;
   transition: all 0.2s ease;
 }
 
-.btn-gradient::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.4s ease;
-}
-
-.btn-gradient:hover:not(:disabled) {
+.btn-accent:hover:not(:disabled) {
   opacity: 0.9;
 }
 
-.btn-gradient:hover:not(:disabled)::before {
-  left: 100%;
-}
-
-.btn-gradient:active:not(:disabled) {
+.btn-accent:active:not(:disabled) {
   transform: none;
 }
 
 /* 按钮点击波纹效果 */
-.btn-gradient::after {
+.btn-accent::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -393,31 +373,31 @@
   opacity: 0;
 }
 
-.btn-gradient.clicked::after {
+.btn-accent.clicked::after {
   animation: rippleEffect 0.5s ease-out;
 }
 
 /* 保存成功状态 */
-.btn-gradient.success {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+.btn-accent.success {
+  background: var(--color-info);
   animation: successPulse 0.4s ease;
 }
 
-.btn-gradient.success:hover:not(:disabled) {
+.btn-accent.success:hover:not(:disabled) {
   opacity: 0.9;
 }
 
-.btn-gradient.success .btn-icon-save {
+.btn-accent.success .btn-icon-save {
   animation: checkBounce 0.4s ease;
 }
 
 /* 保存中状态 */
-.btn-gradient.loading {
+.btn-accent.loading {
   opacity: 0.8;
   cursor: wait;
 }
 
-.btn-gradient.loading .btn-icon-save {
+.btn-accent.loading .btn-icon-save {
   animation: spin 1s linear infinite;
 }
 
@@ -839,14 +819,7 @@
   height: 12px;
   background: var(--bg-hover);
   border-radius: var(--radius-sm);
-  animation: shimmer 1.5s ease-in-out infinite;
-  background: linear-gradient(
-    90deg,
-    var(--bg-hover) 25%,
-    var(--bg-card-hover) 50%,
-    var(--bg-hover) 75%
-  );
-  background-size: 200% 100%;
+  animation: pulse-skeleton 1.5s ease-in-out infinite;
 }
 
 .skeleton-line.short {

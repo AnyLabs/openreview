@@ -66,6 +66,13 @@ interface AppConfigStoreV2Legacy {
   };
 }
 
+interface StoreFile {
+  app_config: AppConfigStoreV3 | AppConfigStoreV2Legacy;
+  theme?: ThemePreference;
+  device_id?: string;
+  migration?: DesktopMigrationInfo;
+}
+
 interface LegacyAIConfigShape {
   ProviderId?: string;
   ModelId?: string;
@@ -221,11 +228,13 @@ function normalizeTheme(value?: string): ThemePreference | undefined {
 /**
  * 为浏览器回退环境派生加密密钥
  */
-async function deriveBrowserSecretKey(): Promise<CryptoKey | null> {
+async function deriveBrowserSecretKey(deviceId?: string): Promise<CryptoKey | null> {
   if (!ENABLE_OPTIONAL_SECRET_ENCRYPTION) return null;
   if (!globalThis.crypto?.subtle) return null;
 
-  const raw = new TextEncoder().encode(`${SECRET_KEY_NS}:${getBrowserDeviceId()}`);
+  const raw = new TextEncoder().encode(
+    `${SECRET_KEY_NS}:${deviceId ?? getBrowserDeviceId()}`
+  );
   const digest = await crypto.subtle.digest("SHA-256", raw);
   return crypto.subtle.importKey(
     "raw",
@@ -239,11 +248,14 @@ async function deriveBrowserSecretKey(): Promise<CryptoKey | null> {
 /**
  * 为浏览器回退环境编码敏感字段
  */
-async function encodeBrowserSecret(value: string): Promise<StoredSecret | undefined> {
+async function encodeBrowserSecret(
+  value: string,
+  deviceId?: string
+): Promise<StoredSecret | undefined> {
   if (!value) return undefined;
 
   try {
-    const key = await deriveBrowserSecretKey();
+    const key = await deriveBrowserSecretKey(deviceId);
     if (!key) {
       return { mode: "plain", value };
     }
@@ -269,17 +281,20 @@ async function encodeBrowserSecret(value: string): Promise<StoredSecret | undefi
 /**
  * 为浏览器回退环境解码敏感字段
  */
-async function decodeBrowserSecret(secret?: StoredSecret): Promise<string> {
+async function decodeBrowserSecret(
+  secret?: StoredSecret,
+  deviceId?: string
+): Promise<string> {
   if (!secret?.value) return "";
   if (secret.mode === "plain") return secret.value;
 
   try {
-    const key = await deriveBrowserSecretKey();
+    const key = await deriveBrowserSecretKey(deviceId);
     if (!key || !secret.iv) return "";
     const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: fromBase64(secret.iv) },
+      { name: "AES-GCM", iv: fromBase64(secret.iv) as BufferSource },
       key,
-      fromBase64(secret.value)
+      fromBase64(secret.value) as BufferSource
     );
     return new TextDecoder().decode(decrypted);
   } catch (error) {
@@ -293,7 +308,8 @@ async function decodeBrowserSecret(secret?: StoredSecret): Promise<string> {
  */
 async function toBrowserStoreConfig(
   config: AppConfig,
-  theme?: ThemePreference
+  theme?: ThemePreference,
+  deviceId?: string
 ): Promise<AppConfigStoreV3> {
   const providerApiKeys: Record<string, StoredSecret> = {};
   const modeProviders = config.ai.modeProviders.map((provider) => ({
@@ -304,7 +320,7 @@ async function toBrowserStoreConfig(
 
   for (const provider of config.ai.modeProviders) {
     if (provider.apiKey) {
-      const encodedProviderKey = await encodeBrowserSecret(provider.apiKey);
+      const encodedProviderKey = await encodeBrowserSecret(provider.apiKey, deviceId);
       if (encodedProviderKey) {
         providerApiKeys[provider.id] = encodedProviderKey;
       }
@@ -325,11 +341,11 @@ async function toBrowserStoreConfig(
     },
     secrets: {
       providerApiKeys,
-      gitlabToken: await encodeBrowserSecret(config.gitlab.token),
+      gitlabToken: await encodeBrowserSecret(config.gitlab.token, deviceId),
     },
     sync: {
       enabled: false,
-      deviceId: getBrowserDeviceId(),
+      deviceId: deviceId ?? getBrowserDeviceId(),
       revision: 0,
       dirtyFields: [],
     },
@@ -343,11 +359,14 @@ async function toBrowserStoreConfig(
 /**
  * 将浏览器回退的 V3 结构还原为业务配置
  */
-async function fromBrowserStoreV3Config(storeConfig: AppConfigStoreV3): Promise<AppConfig> {
+async function fromBrowserStoreV3Config(
+  storeConfig: AppConfigStoreV3,
+  deviceId?: string
+): Promise<AppConfig> {
   const providerApiKeyMap: Record<string, string> = {};
   if (storeConfig.secrets.providerApiKeys) {
     for (const [providerId, secret] of Object.entries(storeConfig.secrets.providerApiKeys)) {
-      providerApiKeyMap[providerId] = await decodeBrowserSecret(secret);
+      providerApiKeyMap[providerId] = await decodeBrowserSecret(secret, deviceId);
     }
   }
 
@@ -365,7 +384,7 @@ async function fromBrowserStoreV3Config(storeConfig: AppConfigStoreV3): Promise<
   return mergeWithDefault({
     gitlab: {
       url: storeConfig.profile.gitlabUrl,
-      token: await decodeBrowserSecret(storeConfig.secrets.gitlabToken),
+      token: await decodeBrowserSecret(storeConfig.secrets.gitlabToken, deviceId),
     },
     ai: {
       providerId: storeConfig.profile.providerId,
@@ -485,6 +504,93 @@ export async function saveConfig(config: AppConfig): Promise<void> {
     theme,
     migration: DEFAULT_MIGRATION,
   };
+}
+
+function assertIsObject(value: unknown, name: string): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`配置字段 ${name} 必须为对象`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function isStoreFile(value: unknown): value is StoreFile {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    "app_config" in candidate &&
+    typeof candidate.app_config === "object" &&
+    candidate.app_config !== null &&
+    "schemaVersion" in (candidate.app_config as Record<string, unknown>)
+  );
+}
+
+function isAppConfigStoreV3(value: unknown): value is AppConfigStoreV3 {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return candidate.schemaVersion === 3 && typeof candidate.profile === "object" && candidate.profile !== null;
+}
+
+async function parseStoreFile(value: StoreFile): Promise<AppConfig> {
+  if (isAppConfigStoreV3(value.app_config)) {
+    return fromBrowserStoreV3Config(value.app_config, value.device_id);
+  }
+
+  return fromBrowserStoreV2Config(value.app_config as AppConfigStoreV2Legacy);
+}
+
+async function parseImportPayload(payload: unknown): Promise<AppConfig> {
+  const raw = typeof payload === "string" ? JSON.parse(payload) : payload;
+  const object = assertIsObject(raw, "root");
+
+  if (isStoreFile(object)) {
+    return parseStoreFile(object);
+  }
+
+  if (!("gitlab" in object) && !("ai" in object)) {
+    throw new Error("配置文件必须包含 gitlab 或 ai 字段");
+  }
+
+  if ("gitlab" in object && object.gitlab !== undefined) {
+    assertIsObject(object.gitlab, "gitlab");
+  }
+
+  if ("ai" in object && object.ai !== undefined) {
+    assertIsObject(object.ai, "ai");
+  }
+
+  return mergeWithDefault(object as Partial<AppConfig>);
+}
+
+async function createExportStoreFile(): Promise<StoreFile> {
+  const config = await loadConfig();
+  const theme = await loadThemePreference();
+  const deviceId = getBrowserDeviceId();
+  const browserStoreConfig = await toBrowserStoreConfig(config, theme, deviceId);
+
+  return {
+    app_config: browserStoreConfig,
+    theme,
+    device_id: deviceId,
+  };
+}
+
+/** 导出当前配置为 JSON 字符串 */
+export async function exportConfig(): Promise<string> {
+  const storeFile = await createExportStoreFile();
+  return JSON.stringify(storeFile, null, 2);
+}
+
+/** 从 JSON 导入配置 */
+export async function importConfig(payload: string | unknown): Promise<AppConfig> {
+  const config = await parseImportPayload(payload);
+  await saveConfig(config);
+  return config;
 }
 
 /** 获取 GitLab 配置 */

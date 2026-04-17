@@ -1,6 +1,6 @@
 /* ==========================================================================
    CodexMonitor 风格布局样式 - Dark Theme v1.0
-   圆角卡片 + 微妙边框 + 渐变背景
+   圆角卡片 + 微妙边框 + 纯色背景
    ========================================================================== */
 
 /* ==================== 主应用容器 ==================== */
@@ -25,9 +25,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(640px 320px at 18% -10%, rgba(129, 140, 248, 0.12), transparent 70%),
-    radial-gradient(620px 380px at 88% 108%, rgba(56, 189, 248, 0.1), transparent 72%);
+  background: transparent;
   z-index: 0;
 }
 
@@ -69,7 +67,7 @@
 .sidebar-logo-icon {
   width: 32px;
   height: 32px;
-  background: var(--gradient-accent);
+  background: var(--color-primary);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
