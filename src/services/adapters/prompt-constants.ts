@@ -29,6 +29,11 @@ export const JSON_FORMAT_SPEC = `{
   ]
 }`;
 
+/** 行号说明 */
+export const LINE_NUMBER_HINT = `line 是指新增代码所在的新文件行号（绝对行号，不是diff中的相对行号）。
+请从 diff 中读取行号（格式如 @@ -50,10 +56,10 @@ 中的 +56 表示新文件第56行）。
+多个 hunk 时，每个 hunk 头部的行号是独立的，需要正确对应到文件的绝对行号。`;
+
 /** 通用输出要求 */
 export const OUTPUT_REQUIREMENTS = [
   "summary 必须控制在 100 字以内，简洁概括主要问题",

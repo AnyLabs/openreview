@@ -14,6 +14,7 @@ import {
   formatRequirements,
   buildLanguageConstraint,
   parseReviewResult,
+  LINE_NUMBER_HINT,
 } from "./prompt-constants";
 
 /** OpenAI 兼容的消息格式 */
@@ -248,6 +249,9 @@ ${rulesText}
 
 请以 JSON 格式返回审查结果，不要包含任何其他内容：
 ${JSON_FORMAT_SPEC}
+
+行号说明：
+${LINE_NUMBER_HINT}
 
 要求：
 ${requirements}
